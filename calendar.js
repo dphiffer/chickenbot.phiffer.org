@@ -29,13 +29,36 @@ class Calendar {
 			status: status
 		};
 		this.events.push(event);
+
+		if (status == 'scheduled') {
+			console.log(`scheduled: ${date} ${time} ${task} ${person}`);
+		}
+
 		return event;
+	}
+
+	updateEvent(data) {
+		let dateTask = `${data.date} ${data.task}`;
+		let index = 0;
+		for (let event of this.events) {
+			let eventDateTask = `${event.date} ${event.task}`;
+			if (dateTask == eventDateTask) {
+				this.events[index].time = data.time;
+				this.events[index].person = data.person;
+				this.events[index].status = data.status;
+				console.log('updated event:');
+				console.log(this.events[index]);
+				return this.events[index];
+			}
+			index++;
+		}
+		return false;
 	}
 
 	markTaskDates(tasks) {
 		let fmt = 'YYYY-MM-DD';
 		for (let event of this.events) {
-			let eventDate = moment(event.date, 'M/D/YYYY');
+			let eventDate = moment(event.date, 'M/D');
 			if (tasks[event.task] &&
 			    (! tasks[event.task].lastRun ||
 			     tasks[event.task].lastRun < eventDate.format(fmt))) {
@@ -80,7 +103,7 @@ class Calendar {
 
 	scheduleEvents(tasks, people, date) {
 		let iso8601 = 'YYYY-MM-DD';
-		let locale = 'M/D/YYYY';
+		let locale = 'M/D';
 		let events = [];
 		console.log(`scheduling ${date.format(iso8601)}`);
 		for (let name in tasks) {
@@ -127,7 +150,7 @@ class Calendar {
 		console.log('archiving events');
 		let upcoming = doc.sheetsByTitle['Upcoming'];
 		let archive = doc.sheetsByTitle['Archive'];
-		let today = moment().format('M/D/YYYY');
+		let today = moment().format('M/D');
 		let rows = await upcoming.getRows();
 		for (let row of rows) {
 			if (row.date >= today) {
@@ -158,7 +181,7 @@ class Calendar {
 			assigned[name] = [];
 			for (let event of events) {
 				if (event.person == name) {
-					let date = moment(event.date, 'M/D/YYYY').format('ddd M/D');
+					let date = moment(event.date, 'M/D').format('ddd M/D');
 					assigned[name].push(`${date}: ${event.task}`);
 				}
 			}
@@ -169,16 +192,21 @@ class Calendar {
 
 	async checkAssignments(app) {
 		let assignments = {};
-		let eventFormat = 'M/D/YYYY hA';
-		let now = moment().format('YYYY-MM-DD HH:mm');
+		let eventFormat = 'M/D h:mm A';
+		let today = moment().format('YYYY-MM-DD');
+		let now = moment().format('HH:mm:ss');
 		for (let event of this.events) {
 			if (event.status != 'scheduled') {
 				continue;
 			}
 			let eventTime = moment(`${event.date} ${event.time}`, eventFormat);
-			if (eventTime.format('YYYY-MM-DD HH:mm') <= now) {
+			if (eventTime.format('YYYY-MM-DD') == today &&
+				eventTime.format('HH:mm:ss') <= now) {
 				let person = app.people[event.person];
 				let task = app.tasks[event.task];
+				if (! person || ! task) {
+					continue;
+				}
 				person.assignment = event;
 				assignments[event.person] = `Hi ${event.person}, ${task.question} [reply Y or Yes]`;
 				await this.markAssignment(app, event, 'pending');

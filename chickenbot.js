@@ -32,6 +32,7 @@ var app;
 	await app.doc.useServiceAccountAuth(config.google.creds);
 	await app.doc.loadInfo();
 	app.log.info(`Setting up using ${app.doc.title}`);
+	app.log.info(`Sending SMS from ${config.chickenbotPhone}`);
 
 	app.tasks = await setupTasks(app.doc);
 	app.people = await setupPeople(app.doc);
@@ -83,15 +84,15 @@ var app;
 				await handlers.sendToAdmin(name, {
 					Body: `[no response after 1 hour on '${app.people[name].assignment.task.toLowerCase()}']`
 				});
-			}, 60 * 1000);
+			}, 60 * 60 * 1000);
 		}
 	}, 60 * 1000);
 
 	app.get('/', (req, reply) => {
-		reply.send({ chickenbot: 'Try POST instead.'});
+		reply.send({ chickenbot: '🐔🐔🐔'});
 	});
 
-	app.post('/', async (req, reply) => {
+	app.post('/message', async (req, reply) => {
 		const twiml = new MessagingResponse();
 		let person = validatePhone(req.body.From);
 		if (! person) {
@@ -148,6 +149,16 @@ var app;
 		}
 		reply.header('Content-Type', 'text/xml')
 		reply.send(twiml.toString());
+	});
+
+	app.post('/update', async (req, reply) => {
+		let updated = false;
+		if (req.body.secret == config.google.webhookSecret) {
+			updated = app.calendar.updateEvent(req.body);
+		}
+		return {
+			'updated': updated
+		};
 	});
 
 	app.listen(config.server, (err, address) => {

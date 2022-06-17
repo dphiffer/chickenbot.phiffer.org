@@ -8,7 +8,8 @@ module.exports = {
 	},
 	google: {
 		spreadsheetId: '<From the URL of your Google spreadsheet>',
-		creds: require('./<Google Service Key>.json')
+		creds: require('./<Google Service Key>.json'),
+		webhookSecret: '<Shared secret, generate with: openssl rand -hex 40>'
 	},
 	twilio: {
 		accountSid: '<Twilio account SID>',
