@@ -104,7 +104,7 @@ var app;
 				app.calendar.scheduleTasks(app.tasks, app.people, app.doc).then(assigned => {
 					for (let name in assigned) {
 						app.log.info(`Chickenbot: ${assigned[name]}`);
-						twilio.messages.create({
+						await twilio.messages.create({
 							body: assigned[name],
 							from: config.chickenbotPhone,
 							to: app.people[name].phone
@@ -118,13 +118,23 @@ var app;
 				for (let name in app.people) {
 					if (name.toLowerCase() == to) {
 						app.log.info(`Chickenbot: ${relay}`);
-						twilio.messages.create({
+						await twilio.messages.create({
 							body: relay,
 							from: config.chickenbotPhone,
 							to: app.people[name].phone
 						});
 						app.people[name].handler = 'sendToAdmin';
 					}
+				}
+			} else if (sms.match(/^announce:/) && req.body.From == config.adminPhone) {
+				let relay = req.body.Body.match(/^announce:\s*(.+)$/ms)[1];
+				app.log.info(`Announcement: ${relay}`);
+				for (let name in app.people) {
+					await twilio.messages.create({
+						body: relay,
+						from: config.chickenbotPhone,
+						to: app.people[name].phone
+					});
 				}
 			} else if (app.people[person].handler) {
 				handlers[app.people[person].handler](person, req.body, twiml);
