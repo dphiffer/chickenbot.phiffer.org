@@ -101,7 +101,7 @@ var app;
 			let sms = req.body.Body.toLowerCase().trim();
 			if (sms == 'schedule' && req.body.From == config.adminPhone) {
 				twiml.message('Ok, scheduling tasks');
-				app.calendar.scheduleTasks(app.tasks, app.people, app.doc).then(assigned => {
+				app.calendar.scheduleTasks(app.tasks, app.people, app.doc).then(async assigned => {
 					for (let name in assigned) {
 						app.log.info(`Chickenbot: ${assigned[name]}`);
 						await twilio.messages.create({
