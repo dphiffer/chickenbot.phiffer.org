@@ -27,10 +27,11 @@ var app;
 		}
 	});
 
-	app.log.info('Loading Google Doc');
+	app.log.info(`Loading https://docs.google.com/spreadsheets/d/${config.google.spreadsheetId}/edit`);
 	app.doc = new GoogleSpreadsheet(config.google.spreadsheetId);
 	await app.doc.useServiceAccountAuth(config.google.creds);
 	await app.doc.loadInfo();
+	app.log.info(`Setting up using ${app.doc.title}`);
 
 	app.tasks = await setupTasks(app.doc);
 	app.people = await setupPeople(app.doc);
@@ -112,6 +113,16 @@ var app;
 						app.people[name].handler = 'sendToAdmin';
 					}
 				});
+			} else if (sms.match(/^announce:/) && req.body.From == config.adminPhone) {
+				let relay = req.body.Body.match(/^announce:\s*(.+)$/ims)[1];
+				app.log.info(`Announcement: ${relay}`);
+				for (let name in app.people) {
+					await twilio.messages.create({
+						body: relay,
+						from: config.chickenbotPhone,
+						to: app.people[name].phone
+					});
+				}
 			} else if (sms.match(/^(\w+):/) && req.body.From == config.adminPhone) {
 				let to = sms.match(/^(\w+):/)[1];
 				let relay = req.body.Body.match(/^\w+:\s*(.+)$/ms)[1];
@@ -125,16 +136,6 @@ var app;
 						});
 						app.people[name].handler = 'sendToAdmin';
 					}
-				}
-			} else if (sms.match(/^announce:/) && req.body.From == config.adminPhone) {
-				let relay = req.body.Body.match(/^announce:\s*(.+)$/ms)[1];
-				app.log.info(`Announcement: ${relay}`);
-				for (let name in app.people) {
-					await twilio.messages.create({
-						body: relay,
-						from: config.chickenbotPhone,
-						to: app.people[name].phone
-					});
 				}
 			} else if (app.people[person].handler) {
 				handlers[app.people[person].handler](person, req.body, twiml);
