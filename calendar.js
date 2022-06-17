@@ -29,11 +29,6 @@ class Calendar {
 			status: status
 		};
 		this.events.push(event);
-
-		if (status == 'scheduled') {
-			console.log(`scheduled: ${date} ${time} ${task} ${person}`);
-		}
-
 		return event;
 	}
 
@@ -46,8 +41,6 @@ class Calendar {
 				this.events[index].time = data.time;
 				this.events[index].person = data.person;
 				this.events[index].status = data.status;
-				console.log('updated event:');
-				console.log(this.events[index]);
 				return this.events[index];
 			}
 			index++;
@@ -105,7 +98,6 @@ class Calendar {
 		let iso8601 = 'YYYY-MM-DD';
 		let locale = 'M/D';
 		let events = [];
-		console.log(`scheduling ${date.format(iso8601)}`);
 		for (let name in tasks) {
 			let task = tasks[name];
 			if (task.nextRun <= date.format(iso8601)) {
@@ -117,7 +109,6 @@ class Calendar {
 					person.name,
 					'scheduled'
 				);
-				console.log(`    ${name} - ${person.name}`);
 				events.push(event);
 			}
 		}
@@ -140,14 +131,12 @@ class Calendar {
 		}
 		let name = this.names[this.nameIndex];
 		if (name == task.lastPerson) {
-			console.log(`    skipping ${name} for ${task.name} since they did this last time`);
 			return this.selectPerson(task, people);
 		}
 		return people[name];
 	}
 
 	async archiveEvents(doc) {
-		console.log('archiving events');
 		let upcoming = doc.sheetsByTitle['Upcoming'];
 		let archive = doc.sheetsByTitle['Archive'];
 		let today = moment().format('M/D');
@@ -156,7 +145,6 @@ class Calendar {
 			if (row.date >= today) {
 				continue;
 			}
-			console.log(`archiving ${row.date}: ${row.task}`);
 			await archive.addRow({
 				date: row.date,
 				time: row.time,
@@ -208,7 +196,7 @@ class Calendar {
 					continue;
 				}
 				person.assignment = event;
-				assignments[event.person] = `Hi ${event.person}, ${task.question} [reply Y or Yes]`;
+				assignments[event.person] = `Hi ${event.person}, ${task.question} [reply Y or Yes or Snooze for more time]`;
 				await this.markAssignment(app, event, 'pending');
 			}
 		}
@@ -219,12 +207,46 @@ class Calendar {
 		let assignmentId = `${assignment.date} ${assignment.task}`;
 		let sheet = app.doc.sheetsByTitle['Upcoming'];
 		let rows = await sheet.getRows();
+		let index = 0;
+		for (let event of this.events) {
+			if (assignmentId == `${event.date} ${event.task}`) {
+				this.events[index].status = status;
+				break;
+			}
+			index++;
+		}
 		for (let row of rows) {
 			if (assignmentId == `${row.date} ${row.task}`) {
 				row.status = status;
 				await row.save();
 			}
 		}
+	}
+
+	async snoozeAssignment(app, assignment) {
+		let assignmentId = `${assignment.date} ${assignment.task}`;
+		let sheet = app.doc.sheetsByTitle['Upcoming'];
+		let rows = await sheet.getRows();
+		let index = 0;
+		let rescheduled;
+		for (let event of this.events) {
+			if (assignmentId == `${event.date} ${event.task}`) {
+				rescheduled = moment().add('1', 'hours').format('h:mm A');
+				this.events[index].time = rescheduled;
+				this.events[index].status = 'scheduled';
+				break;
+			}
+			index++;
+		}
+		for (let row of rows) {
+			if (assignmentId == `${row.date} ${row.task}`) {
+				row.time = rescheduled;
+				row.status = 'scheduled';
+				await row.save();
+				break;
+			}
+		}
+		return rescheduled;
 	}
 }
 

@@ -17,7 +17,7 @@ Example task:
 * name: Close the door
 * question: did you close the chickens’ door?
 * frequency: 1
-* time: 8PM
+* time: 8:00 PM
 
 ## Add people
 
@@ -59,7 +59,7 @@ Configure the phone number to send webhook requests to the chickenbot server for
 2. Paste the code from the file `webhook.gs`
 3. Replace the `url` and `secret` variables with your own values
 4. Configure `sendWebhook` from the `Head` deployment `from Spreadsheet` to run `on edit`
-5. You will need to click through a scary looking "app security warning" to grant access to your spreadsheets
+5. You will need to click through a scary looking "app security warning" to grant access to your spreadsheets (advanced -> open unsafe app)
 
 ## Admin commands
 

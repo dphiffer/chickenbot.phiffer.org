@@ -56,24 +56,36 @@ var app;
 			let sms = data.Body.toLowerCase().trim();
 			if (sms == 'y' || sms == 'yes' || sms == 'yep') {
 				let response = Person.getAffirmation();
-				app.log.info(`Chickenbot: ${response}`);
+				app.log.info(`[${person}] ${response}`);
 				twiml.message(response);
 				await app.calendar.markAssignment(app, assignment, 'complete');
 				app.people[person].handler = 'sendToAdmin';
 				clearTimeout(app.people[person].timeout);
 				app.people[person].timeout = null;
 				app.people[person].assignment = null;
+			} else if (sms == 'snooze') {
+				let time = await app.calendar.snoozeAssignment(app, assignment);
+				let response = `Great, I’ll ask again at ${time}. You can reply Y or Yes at any time once you’re done.`;
+				app.log.info(`[${person}] ${response}`);
+				await twilio.messages.create({
+					body: response,
+					from: config.chickenbotPhone,
+					to: app.people[person].phone
+				});
+				clearTimeout(app.people[person].timeout);
+				app.people[person].timeout = null;
 			} else {
 				data.Body += ` (task: ${assignment.task})`;
 				await handlers.sendToAdmin(person, data, twiml);
 			}
+			return true;
 		}
 	};
 
-	setTimeout(async () => {
+	setInterval(async () => {
 		let assignments = await app.calendar.checkAssignments(app);
 		for (let name in assignments) {
-			app.log.info(`Chickenbot: ${assignments[name]}`);
+			app.log.info(`[${name}] ${assignments[name]}`);
 			await twilio.messages.create({
 				body: assignments[name],
 				from: config.chickenbotPhone,
@@ -105,7 +117,7 @@ var app;
 				twiml.message('Ok, scheduling tasks');
 				app.calendar.scheduleTasks(app.tasks, app.people, app.doc).then(async assigned => {
 					for (let name in assigned) {
-						app.log.info(`Chickenbot: ${assigned[name]}`);
+						app.log.info(`[${name}] ${assigned[name]}`);
 						await twilio.messages.create({
 							body: assigned[name],
 							from: config.chickenbotPhone,
@@ -116,7 +128,7 @@ var app;
 				});
 			} else if (sms.match(/^announce:/) && req.body.From == config.adminPhone) {
 				let relay = req.body.Body.match(/^announce:\s*(.+)$/ims)[1];
-				app.log.info(`Announcement: ${relay}`);
+				app.log.info(`[announce] ${relay}`);
 				for (let name in app.people) {
 					if (app.people[name].status != 'active') {
 						continue;
@@ -132,7 +144,7 @@ var app;
 				let relay = req.body.Body.match(/^\w+:\s*(.+)$/ms)[1];
 				for (let name in app.people) {
 					if (name.toLowerCase() == to) {
-						app.log.info(`Chickenbot: ${relay}`);
+						app.log.info(`[${name}] ${relay}`);
 						await twilio.messages.create({
 							body: relay,
 							from: config.chickenbotPhone,
@@ -155,6 +167,11 @@ var app;
 		let updated = false;
 		if (req.body.secret == config.google.webhookSecret) {
 			updated = app.calendar.updateEvent(req.body);
+			app.log.info({
+				updated: updated
+			});
+		} else {
+			app.log.error(`invalid update webhook secret`);
 		}
 		return {
 			'updated': updated
