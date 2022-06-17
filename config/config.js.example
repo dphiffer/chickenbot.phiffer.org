@@ -1,4 +1,5 @@
 module.exports = {
+	timezone: 'America/New_York',
 	chickenbotPhone: '+15185551212',
 	adminPhone: '+15185551234',
 	server: {

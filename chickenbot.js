@@ -5,7 +5,8 @@ const Person = require('./person');
 const Calendar = require('./calendar');
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
 
-const config = require('./config');
+const config = require('./config/config');
+moment.tz.setDefault(config.timezone);
 const twilio = require('twilio')(
 	config.twilio.accountSid,
 	config.twilio.authToken
@@ -26,6 +27,7 @@ var app;
 		}
 	});
 
+	app.log.info('Loading Google Doc');
 	app.doc = new GoogleSpreadsheet(config.google.spreadsheetId);
 	await app.doc.useServiceAccountAuth(config.google.creds);
 	await app.doc.loadInfo();
