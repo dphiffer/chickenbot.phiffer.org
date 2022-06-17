@@ -117,6 +117,9 @@ var app;
 				let relay = req.body.Body.match(/^announce:\s*(.+)$/ims)[1];
 				app.log.info(`Announcement: ${relay}`);
 				for (let name in app.people) {
+					if (app.people[name].status != 'active') {
+						continue;
+					}
 					await twilio.messages.create({
 						body: relay,
 						from: config.chickenbotPhone,
