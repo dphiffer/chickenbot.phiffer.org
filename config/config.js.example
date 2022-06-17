@@ -1,0 +1,16 @@
+module.exports = {
+	chickenbotPhone: '+15185551212',
+	adminPhone: '+15185551234',
+	server: {
+		port: 3000,
+		host: '0.0.0.0'
+	},
+	google: {
+		spreadsheetId: '<From the URL of your Google spreadsheet>',
+		creds: require('./<Google Service Key>.json')
+	},
+	twilio: {
+		accountSid: '<Twilio account SID>',
+		authToken: '<Twilio account auth token>'
+	}
+};
