@@ -1,0 +1,37 @@
+<main>
+	<h1>🐔 chickenbot</h1>
+	<p><i>Chicken care task rotation managed by Google Sheet and SMS</i></p>
+	<h2 id="phone">Phone number</h2>
+	<p>The chickenbot can be reached at <b><%= phone %></b>.</p>
+	<h2 id="tasks">This week’s tasks</h2>
+	<p>Managed by <a href="<%= spreadsheet_url %>">this spreadsheet</a>. You can adjust the assigned person, scheduled time, or the status of any upcoming event.</p>
+	<table>
+		<tr>
+			<th>Date</th>
+			<th>Task</th>
+			<th>Person</th>
+			<th>Status</th>
+		</tr>
+		<% for (let event of events) { %>
+			<% if (event.sheet != 'Upcoming') { continue; } %>
+			<tr>
+				<td><%= event.date %></td>
+				<td><%= event.task %></td>
+				<td><%= event.person %></td>
+				<td><%= event.status %></td>
+			</tr>
+		<% } %>
+	</table>
+	<h2 id="backup">Designated backup</h2>
+	<p>The current designated backup is <b><%= backup %></b>. They are the host of this chicken care party and have some extra SMS abilities described below.</p>
+	<ol>
+		<li><b>To schedule tasks:</b> send chickenbot the word <code>schedule</code>.</li>
+		<li>All messages sent by known people to the chickenbot (except responses to the reminder SMS) get relayed to the backup.</li>
+		<li>If someone doesn’t respond to their task reminder SMS in time, the backup gets notified and is responsible for finding someone to do the task.</li>
+		<li><b>To make an announcement:</b> send chickenbot <code>announce:</code> and everything after the colon will get relayed to everyone as chickenbot.</li>
+		<li><b>To relay a private message:</b> send chickenbot <code>[name]:</code> with the person's name and everything after the colon will get relayed to them as chickenbot.</li>
+		<li><b>To designate a new backup:</b> send chickenbot <code>backup: [name]</code>.</li>
+	</ol>
+	<h2 id="code">Code</h2>
+	<p>The code that runs chickenbot is available <a href="https://github.com/dphiffer/chickenbot" title="chickenbot code repo">on GitHub</a>.</p>
+</main>
