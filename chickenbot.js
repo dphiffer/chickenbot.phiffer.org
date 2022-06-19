@@ -78,7 +78,7 @@ var backup;
 				app.log.info(`[${person}] ${response}`);
 				twiml.message(response);
 				await app.calendar.markAssignment(app, assignment, 'complete');
-				app.people[person].handler = 'sendToBackup';
+				app.people[person].handler = null;
 				clearTimeout(app.people[person].timeout);
 				app.people[person].timeout = null;
 				app.people[person].assignment = null;
@@ -105,6 +105,59 @@ var backup;
 				await handlers.sendToBackup(person, data, twiml);
 			}
 			return true;
+		},
+		setAway: async (person, data, twiml) => {
+			app.log.info('setAway');
+			let sms = data.Body.toLowerCase().trim();
+			app.people[person].handler = null;
+			if (sms == 'ongoing') {
+				if (app.people[person].status == 'backup') {
+					await twilio.messages.create({
+						body: "Please reassign the designated backup first.",
+						from: config.chickenbotPhone,
+						to: app.people[person].phone
+					});
+				} else {
+					await app.people[person].updateStatus(app, 'inactive');
+					await twilio.messages.create({
+						body: "No problem, feel free to send 'back' whenever you’re ready to take on chicken tasks again.",
+						from: config.chickenbotPhone,
+						to: app.people[person].phone
+					});
+				}
+			} else {
+				let days = sms.split(',');
+				app.log.info(days);
+				let parseDay = input => {
+					input = input.trim();
+					if (moment(input, 'ddd').isValid()) {
+						return moment(input, 'ddd').format('YYYY-MM-DD');
+					} else if (moment(input, 'M/D').isValid()) {
+						return moment(input, 'M/D').format('YYYY-MM-DD');
+					} else {
+						return false;
+					}
+				};
+				let awayDays = app.people[person].away.split(', ');
+				for (let day of days) {
+					isoDay = parseDay(day);
+					if (! isoDay) {
+						await twilio.messages.create({
+							body: `Sorry I couldn't make sense of '${day}'. Try again by replying 'away'.`,
+							from: config.chickenbotPhone,
+							to: app.people[person].phone
+						});
+						return;
+					}
+					awayDays.push(isoDay);
+				}
+				awayDays = await app.people[person].updateAway(app, awayDays);
+				await twilio.messages.create({
+					body: `Got it, your current away days are: ${awayDays}`,
+					from: config.chickenbotPhone,
+					to: app.people[person].phone
+				});
+			}
 		}
 	};
 
@@ -144,7 +197,13 @@ var backup;
 		} else {
 			app.log.info(`${person}: ${req.body.Body}`);
 			let sms = req.body.Body.toLowerCase().trim();
-			if (sms == 'schedule' && req.body.From == backup.phone) {
+			if (sms == 'away') {
+				twiml.message("Which days are you going to be away? [reply 'Mon, Tue' or '6/19, 6/21' or 'ongoing']")
+				app.people[person].handler = 'setAway';
+			} else if (sms == 'back') {
+				await app.people[person].updateStatus(app, 'active');
+				twiml.message("Welcome back! The chickens will be pleased to see you.");
+			} else if (sms == 'schedule' && req.body.From == backup.phone) {
 				twiml.message('Ok, scheduling tasks');
 				app.calendar.scheduleTasks(app.tasks, app.people, app.doc).then(async assigned => {
 					for (let name in assigned) {

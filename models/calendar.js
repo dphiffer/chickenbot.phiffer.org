@@ -97,7 +97,7 @@ class Calendar {
 		for (let name in tasks) {
 			let task = tasks[name];
 			if (task.nextRun <= date.format(iso8601)) {
-				let person = this.selectPerson(task, people);
+				let person = this.selectPerson(task, people, date.format(iso8601));
 				let event = this.addEvent('Upcoming', {
 					date: date.format(locale),
 					time: task.time,
@@ -112,7 +112,7 @@ class Calendar {
 		return events;
 	}
 
-	selectPerson(task, people) {
+	selectPerson(task, people, date) {
 		if (! this.names) {
 			this.names = [];
 			for (let name in people) {
@@ -127,7 +127,9 @@ class Calendar {
 		}
 		let name = this.names[this.nameIndex];
 		if (name == task.lastPerson) {
-			return this.selectPerson(task, people);
+			return this.selectPerson(task, people, date);
+		} else if (people[name].isAway(date)) {
+			return this.selectPerson(task, people, date);
 		}
 		return people[name];
 	}

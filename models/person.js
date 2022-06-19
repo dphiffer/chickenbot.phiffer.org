@@ -1,9 +1,12 @@
+const moment = require('moment-timezone');
+
 class Person {
 
 	constructor(row) {
 		this.name = row.name;
 		this.phone = this.normalizePhone(row.phone);
 		this.status = row.status;
+		this.away = row.away || '';
 	}
 
 	normalizePhone(phone) {
@@ -29,8 +32,8 @@ class Person {
 
 	static async currentBackup(app) {
 		for (let person in app.people) {
-			if (person.status == 'backup') {
-				return person;
+			if (app.people[person].status == 'backup') {
+				return app.people[person];
 			}
 		}
 		// Nobody assigned yet, just pick the first person on the list
@@ -48,13 +51,40 @@ class Person {
 		this.status = status;
 		let sheet = app.doc.sheetsByTitle['People'];
 		let rows = await sheet.getRows();
-		for (let row in rows) {
+		for (let row of rows) {
 			if (row.name == this.name) {
 				row.status = status;
 				await row.save();
 				return this;
 			}
 		}
+	}
+
+	async updateAway(app, awayDays) {
+		awayDays = awayDays.filter(date => {
+			return date >= moment().format('YYYY-MM-DD');
+		});
+		this.away = awayDays.join(', ');
+		let sheet = app.doc.sheetsByTitle['People'];
+		let rows = await sheet.getRows();
+		for (let row of rows) {
+			if (row.name == this.name) {
+				row.away = this.away;
+				await row.save();
+				break;
+			}
+		}
+		return awayDays.map(date => {
+			return moment(date, 'YYYY-MM-DD').format('ddd M/D');
+		}).join(', ');
+	}
+
+	isAway(date) {
+		let awayDays = this.away.split(', ');
+		if (awayDays.indexOf(date) > -1) {
+			return true;
+		}
+		return false;
 	}
 }
 
