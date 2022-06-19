@@ -107,7 +107,6 @@ var backup;
 			return true;
 		},
 		setAway: async (person, data, twiml) => {
-			app.log.info('setAway');
 			let sms = data.Body.toLowerCase().trim();
 			app.people[person].handler = null;
 			if (sms == 'ongoing') {
@@ -127,7 +126,6 @@ var backup;
 				}
 			} else {
 				let days = sms.split(',');
-				app.log.info(days);
 				let parseDay = input => {
 					input = input.trim();
 					if (moment(input, 'ddd').isValid()) {
@@ -192,7 +190,7 @@ var backup;
 		const twiml = new MessagingResponse();
 		let person = validatePhone(req.body.From);
 		if (! person) {
-			app.log.info(`unknown sender: ${req.body.From}`);
+			app.log.info(`[unknown sender] ${req.body.From}: ${req.body.Body}`);
 			twiml.message('Sorry, I don’t know who you are.');
 		} else {
 			app.log.info(`${person}: ${req.body.Body}`);
