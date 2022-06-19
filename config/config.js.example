@@ -1,7 +1,7 @@
 module.exports = {
+	url: '<The URL of the chickenbot server e.g. https://chickenbot.example.com/>'
 	timezone: 'America/New_York',
 	chickenbotPhone: '+15185551212',
-	adminPhone: '+15185551234',
 	server: {
 		port: 3000,
 		host: '0.0.0.0'

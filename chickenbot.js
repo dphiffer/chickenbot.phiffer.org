@@ -1,17 +1,23 @@
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const moment = require('moment-timezone');
-const Task = require('./task');
-const Person = require('./person');
-const Calendar = require('./calendar');
+const path = require('path');
+
+const Task = require('./models/task');
+const Person = require('./models/person');
+const Calendar = require('./models/calendar');
+
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
 
 const config = require('./config/config');
 moment.tz.setDefault(config.timezone);
+
 const twilio = require('twilio')(
 	config.twilio.accountSid,
 	config.twilio.authToken
 );
+
 var app;
+var backup;
 
 (async () => {
 	app = require('fastify')({
@@ -38,17 +44,30 @@ var app;
 	app.people = await setupPeople(app.doc);
 	app.calendar = await setupCalendar(app.doc);
 
+	backup = await Person.currentBackup(app);
+	app.log.info(`Current backup is ${backup.name}`);
+
 	app.calendar.markTaskDates(app.tasks);
 
 	app.register(require('@fastify/formbody'));
+	app.register(require('@fastify/static'), {
+		root: path.join(__dirname, 'public')
+	});
+	app.register(require('@fastify/view'), {
+		engine: {
+			ejs: require('ejs')
+		},
+		root: path.join(__dirname, 'views'),
+		layout: 'layout.ejs'
+	});
 
 	const handlers = {
-		sendToAdmin: async (person, data, twiml) => {
-			app.log.info(`[Admin] ${person}: ${data.Body}`);
+		sendToBackup: async (person, data, twiml) => {
+			app.log.info(`[backup] ${person}: ${data.Body}`);
 			await twilio.messages.create({
 				body: `${person}: ${data.Body}`,
 				from: config.chickenbotPhone,
-				to: config.adminPhone
+				to: backup.phone
 			});
 		},
 		confirmCompletion: async (person, data, twiml) => {
@@ -59,10 +78,17 @@ var app;
 				app.log.info(`[${person}] ${response}`);
 				twiml.message(response);
 				await app.calendar.markAssignment(app, assignment, 'complete');
-				app.people[person].handler = 'sendToAdmin';
+				app.people[person].handler = 'sendToBackup';
 				clearTimeout(app.people[person].timeout);
 				app.people[person].timeout = null;
 				app.people[person].assignment = null;
+				if (app.calendar.allEventsComplete()) {
+					await twilio.messages.create({
+						body: 'All of the week’s tasks are complete. Time to schedule the next week.',
+						from: config.chickenbotPhone,
+						to: backup.phone
+					});
+				}
 			} else if (sms == 'snooze') {
 				let time = await app.calendar.snoozeAssignment(app, assignment);
 				let response = `Great, I’ll ask again at ${time}. You can reply Y or Yes at any time once you’re done.`;
@@ -76,7 +102,7 @@ var app;
 				app.people[person].timeout = null;
 			} else {
 				data.Body += ` (task: ${assignment.task})`;
-				await handlers.sendToAdmin(person, data, twiml);
+				await handlers.sendToBackup(person, data, twiml);
 			}
 			return true;
 		}
@@ -93,7 +119,7 @@ var app;
 			});
 			app.people[name].handler = 'confirmCompletion';
 			app.people[name].timeout = setTimeout(async () => {
-				await handlers.sendToAdmin(name, {
+				await handlers.sendToBackup(name, {
 					Body: `[no response after 1 hour on '${app.people[name].assignment.task.toLowerCase()}']`
 				});
 			}, 60 * 60 * 1000);
@@ -101,7 +127,12 @@ var app;
 	}, 60 * 1000);
 
 	app.get('/', (req, reply) => {
-		reply.send({ chickenbot: '🐔🐔🐔'});
+		reply.view('index.ejs', {
+			phone: displayPhone(config.chickenbotPhone),
+			spreadsheet_url: `https://docs.google.com/spreadsheets/d/${config.google.spreadsheetId}/edit`,
+			events: app.calendar.events,
+			backup: 'Dan'
+		});
 	});
 
 	app.post('/message', async (req, reply) => {
@@ -113,7 +144,7 @@ var app;
 		} else {
 			app.log.info(`${person}: ${req.body.Body}`);
 			let sms = req.body.Body.toLowerCase().trim();
-			if (sms == 'schedule' && req.body.From == config.adminPhone) {
+			if (sms == 'schedule' && req.body.From == backup.phone) {
 				twiml.message('Ok, scheduling tasks');
 				app.calendar.scheduleTasks(app.tasks, app.people, app.doc).then(async assigned => {
 					for (let name in assigned) {
@@ -123,12 +154,13 @@ var app;
 							from: config.chickenbotPhone,
 							to: app.people[name].phone
 						});
-						app.people[name].handler = 'sendToAdmin';
+						app.people[name].handler = 'sendToBackup';
 					}
 				});
-			} else if (sms.match(/^announce:/) && req.body.From == config.adminPhone) {
+			} else if (sms.match(/^announce:/) && req.body.From == backup.phone) {
 				let relay = req.body.Body.match(/^announce:\s*(.+)$/ims)[1];
 				app.log.info(`[announce] ${relay}`);
+				let count = 0;
 				for (let name in app.people) {
 					if (app.people[name].status != 'active') {
 						continue;
@@ -138,25 +170,66 @@ var app;
 						from: config.chickenbotPhone,
 						to: app.people[name].phone
 					});
+					count++;
 				}
-			} else if (sms.match(/^(\w+):/) && req.body.From == config.adminPhone) {
+				await twilio.messages.create({
+					body: `Announcement sent to ${count} people.`,
+					from: config.chickenbotPhone,
+					to: backup.phone
+				});
+			} else if (sms.match(/^backup:\s+(\w+)$/) && req.body.From == backup.phone) {
+				let matches = req.body.Body.match(/^backup:\s*(.+)$/ims);
+				let newBackup = matches[1];
+				for (let name in app.people) {
+					if (name.toLowerCase() == newBackup.toLowerCase()) {
+						await backup.updateStatus(app, 'active');
+						await app.people[name].updateStatus(app, 'backup');
+						await twilio.messages.create({
+							body: `Thank you for being the designated backup! Handing things over to ${name}.`,
+							from: config.chickenbotPhone,
+							to: backup.phone
+						});
+						await twilio.messages.create({
+							body: `Hi ${name}, you have been assigned to be the new designated backup. You may need to schedule the coming week’s tasks. More info: ${config.url}#backup`,
+							from: config.chickenbotPhone,
+							to: app.people[name].phone
+						});
+						backup = app.people[name];
+						break;
+					}
+				}
+			} else if (sms.match(/^(\w+):/) && req.body.From == backup.phone) {
 				let to = sms.match(/^(\w+):/)[1];
-				let relay = req.body.Body.match(/^\w+:\s*(.+)$/ms)[1];
+				let matches = req.body.Body.match(/^(\w+):\s*(.+)$/ms);
+				let relay = matches[2];
+				let found = false;
 				for (let name in app.people) {
 					if (name.toLowerCase() == to) {
+						found = true;
 						app.log.info(`[${name}] ${relay}`);
 						await twilio.messages.create({
 							body: relay,
 							from: config.chickenbotPhone,
 							to: app.people[name].phone
 						});
-						app.people[name].handler = 'sendToAdmin';
+						app.people[name].handler = 'sendToBackup';
 					}
+				}
+				if (! found) {
+					twiml.message(`Sorry, I don’t know of a person named '${matches[1]}'.`);
 				}
 			} else if (app.people[person].handler) {
 				handlers[app.people[person].handler](person, req.body, twiml);
+			} else if (req.body.From == backup.phone) {
+				let commands = [
+					"'schedule' assigns tasks for the coming week.",
+					"'announce: [msg]' broadcasts a message to everyone.",
+					"'[name]: [msg]' relays a message to a known person.",
+					"'backup: [name]' reassigns the designated backup."
+				];
+				twiml.message(`Sorry, I don’t know that command! As the designated backup you can send:\n${commands.join('\n')}\nMore info: ${config.url}`);
 			} else {
-				handlers.sendToAdmin(person, req.body, twiml);
+				handlers.sendToBackup(person, req.body, twiml);
 			}
 		}
 		reply.header('Content-Type', 'text/xml')
@@ -223,4 +296,11 @@ function validatePhone(phone) {
 		}
 	}
 	return false;
+}
+
+function displayPhone(phone) {
+	let area = phone.substr(2, 3);
+	let prefix = phone.substr(5, 3);
+	let postfix = phone.substr(8, 4);
+	return `${area}-${prefix}-${postfix}`;
 }

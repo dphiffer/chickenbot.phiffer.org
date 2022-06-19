@@ -23,6 +23,8 @@ Example task:
 
 Add names and phone numbers for people who will be caring for the chickens. Assigning the status `active` will include a person in the rotation for a given week.
 
+Names are currently assumed to be a single word, a first name without any spaces or punctuation.
+
 ## Google auth
 
 1. Download a Service Account JSON file from Google Cloud ([instructions](https://theoephraim.github.io/node-google-spreadsheet/#/getting-started/authentication))
@@ -31,8 +33,8 @@ Add names and phone numbers for people who will be caring for the chickens. Assi
 ## Configuration
 
 1. Copy `config.js.example` to `config.js`
-2. Set `chickenbotPhone` as the phone number for the bot (from Twilio)
-3. Set `adminPhone` as the number for the admin user (perhaps your cell number)
+2. Set `url` to the public facing server URL for chickenbot.
+3. Set `chickenbotPhone` as the phone number for the bot (from Twilio)
 4. Configure the Google Sheet ID from its URL, and set the filename for the service key json file (saved in the `config` folder)
 5. Generate a webhook shared secret at the command line with `openssl rand -hex 40` and configure that value in `webhookSecret`
 6. Configure the Twilio SID and auth token from the [Twilio Console](https://console.twilio.com/)
@@ -61,10 +63,11 @@ Configure the phone number to send webhook requests to the chickenbot server for
 4. Configure `sendWebhook` from the `Head` deployment `from Spreadsheet` to run `on edit`
 5. You will need to click through a scary looking "app security warning" to grant access to your spreadsheets (advanced -> open unsafe app)
 
-## Admin commands
+## Designated backup commands
 
-From the admin phone:
+From the designated backup phone:
 
 * Send a `schedule` SMS to the chickenbot phone number to schedule tasks for the coming week
 * Send `announce: [message]` to relay a message to everyone
 * Send `[name]: [message]` to relay a message to a particular person by name
+* Send `backup: [name]` to assign the backup role to another person
