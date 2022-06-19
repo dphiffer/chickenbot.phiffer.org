@@ -137,16 +137,22 @@ class Calendar {
 		let archive = doc.sheetsByTitle['Archive'];
 		let today = moment().format('M/D');
 		let rows = await upcoming.getRows();
+		let pending = [];
 		for (let row of rows) {
-			await archive.addRow({
+			let event = {
 				date: row.date,
 				time: row.time,
 				task: row.task,
 				person: row.person,
 				status: row.status
-			});
+			};
+			await archive.addRow(event);
+			if (event.status != 'complete') {
+				pending.push(event);
+			}
 		}
 		await upcoming.clearRows();
+		await upcoming.addRows(pending);
 	}
 
 	async upcomingEvents(events, doc) {
