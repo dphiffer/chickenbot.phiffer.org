@@ -22,16 +22,24 @@
 			</tr>
 		<% } %>
 	</table>
+	<h2 id="away">Going away</h2>
+	<p>Sometimes you need to take some time off, or need to flag a day when you won’t be available for chicken care.</p>
+	<ul>
+		<li><b>To deactivate entirely</b> for an extended break: send <code>away</code> then <code>ongoing</code> at the following prompt.</li>
+		<li>Then, <b>to return from an extended break</b>: send <code>back</code>.</li>
+		<li><b>To flag specific days</b> when you are away: send <code>away</code> then a comma-separated list of days when you're away, formatted as either <code>Mon, Tue</code> or <code>6/19, 6/21</code>.</li>
+	</ul>
+	<p>Your away days will be taken into account for the following week’s schedule.</p>
 	<h2 id="backup">Designated backup</h2>
 	<p>The current designated backup is <b><%= backup %></b>. If someone isn’t able to come through for a task, the designated backup should bottom line it. They are also a kind of host to this chicken care party and have some extra SMS abilities described below.</p>
-	<ol>
+	<ul>
 		<li><b>To schedule tasks:</b> send chickenbot the word <code>schedule</code>.</li>
 		<li>All messages sent by known people to the chickenbot (except responses to the reminder SMS) get relayed to the backup.</li>
 		<li>If someone doesn’t respond to their task reminder SMS in time, the backup gets notified and is responsible for finding someone to do the task.</li>
 		<li><b>To make an announcement:</b> send chickenbot <code>announce: [message]</code> and everything after the colon will get relayed to everyone as chickenbot.</li>
 		<li><b>To relay a private message:</b> send chickenbot <code>[name]: [message]</code> with the person's name and everything after the colon will get relayed to them as chickenbot.</li>
 		<li><b>To designate a new backup:</b> send chickenbot <code>backup: [name]</code>.</li>
-	</ol>
+	</ul>
 	<h2 id="code">Code</h2>
 	<p>The code that runs chickenbot is available <a href="https://github.com/dphiffer/chickenbot" title="chickenbot code repo">on GitHub</a>.</p>
 </main>
