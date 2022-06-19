@@ -84,7 +84,7 @@ var backup;
 				app.people[person].assignment = null;
 				if (app.calendar.allEventsComplete()) {
 					await twilio.messages.create({
-						body: 'All of the week’s tasks are complete. Time to schedule the next week.',
+						body: "All of the current tasks are complete. To schedule next week’s tasks, reply with 'schedule'.",
 						from: config.chickenbotPhone,
 						to: backup.phone
 					});
@@ -222,10 +222,10 @@ var backup;
 				handlers[app.people[person].handler](person, req.body, twiml);
 			} else if (req.body.From == backup.phone) {
 				let commands = [
-					"'schedule' assigns tasks for the coming week.",
-					"'announce: [msg]' broadcasts a message to everyone.",
-					"'[name]: [msg]' relays a message to a known person.",
-					"'backup: [name]' reassigns the designated backup."
+					"• 'schedule' assigns tasks for the coming week.",
+					"• 'announce: [msg]' broadcasts a message to everyone.",
+					"• '[name]: [msg]' relays a message to a known person.",
+					"• 'backup: [name]' reassigns the designated backup."
 				];
 				twiml.message(`Sorry, I don’t know that command! As the designated backup you can send:\n${commands.join('\n')}\nMore info: ${config.url}`);
 			} else {
