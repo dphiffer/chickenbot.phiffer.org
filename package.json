@@ -13,6 +13,7 @@
     "moment": "^2.29.3",
     "moment-timezone": "^0.5.34",
     "pino-pretty": "^8.0.0",
+    "suntimes": "^6.0.2",
     "twilio": "^3.77.3"
   },
   "scripts": {

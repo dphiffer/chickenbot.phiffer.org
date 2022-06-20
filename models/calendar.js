@@ -1,4 +1,5 @@
 const moment = require('moment-timezone');
+const suntimes = require('suntimes');
 
 class Calendar {
 
@@ -100,7 +101,7 @@ class Calendar {
 				let person = this.selectPerson(task, people, date.format(iso8601));
 				let event = this.addEvent('Upcoming', {
 					date: date.format(locale),
-					time: task.time,
+					time: this.getEventTime(task.time, date),
 					task: task.name,
 					person: person.name,
 					status: 'scheduled'
@@ -110,6 +111,21 @@ class Calendar {
 		}
 		this.markTaskDates(tasks);
 		return events;
+	}
+
+	getEventTime(time, date) {
+		const config = require('../config/config');
+		if (time == 'sunset') {
+			let sunsetUTC = suntimes.getSunsetDateTimeUtc(
+				date.toDate(),
+				config.latitude,
+				config.longitude
+			);
+			let sunsetLocal = moment.tz(sunsetUTC, 'UTC').add(10, 'minutes');
+			return sunsetLocal.tz(config.timezone).format('h:mm A');
+		} else {
+			return time;
+		}
 	}
 
 	selectPerson(task, people, date) {

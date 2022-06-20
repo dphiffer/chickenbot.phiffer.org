@@ -12,12 +12,21 @@ Chicken care task rotation using a Google Sheet and Twilio
 
 ## Add tasks
 
-Example task:
+Example morning task:
+
+* name: Open the door
+* question: did you open the chickens’ door? Check the water? Check the food?
+* frequency: 1
+* time: 8:00 AM
+
+Example evening task:
 
 * name: Close the door
 * question: did you close the chickens’ door?
 * frequency: 1
-* time: 8:00 PM
+* time: sunset
+
+Assigning `sunset` as the time will adjust the timing according to when the sun sets on a given date (it actually uses 10 minutes after sunset).
 
 ## Add people
 
@@ -34,10 +43,11 @@ Names are currently assumed to be a single word, a first name without any spaces
 
 1. Copy `config.js.example` to `config.js`
 2. Set `url` to the public facing server URL for chickenbot.
-3. Set `chickenbotPhone` as the phone number for the bot (from Twilio)
-4. Configure the Google Sheet ID from its URL, and set the filename for the service key json file (saved in the `config` folder)
-5. Generate a webhook shared secret at the command line with `openssl rand -hex 40` and configure that value in `webhookSecret`
-6. Configure the Twilio SID and auth token from the [Twilio Console](https://console.twilio.com/)
+3. Set the `timezone` and `latitude`/`longitude` coordinates (used for calculating sunset times). You can find coordinate values in the URL from [Google Maps](https://maps.google.com/).
+4. Set `chickenbotPhone` as the phone number for the bot (from Twilio)
+5. Configure the Google Sheet ID from its URL, and set the filename for the service key json file (saved in the `config` folder)
+6. Generate a webhook shared secret at the command line with `openssl rand -hex 40` and configure that value in `webhookSecret`
+7. Configure the Twilio SID and auth token from the [Twilio Console](https://console.twilio.com/)
 
 ## Install dependencies
 
