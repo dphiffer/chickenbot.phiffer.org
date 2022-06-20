@@ -58,7 +58,10 @@ var backup;
 			ejs: require('ejs')
 		},
 		root: path.join(__dirname, 'views'),
-		layout: 'layout.ejs'
+		layout: 'layout.ejs',
+		defaultContext: {
+			url: config.url
+		}
 	});
 
 	const handlers = {
@@ -182,7 +185,8 @@ var backup;
 			phone: displayPhone(config.chickenbotPhone),
 			spreadsheet_url: `https://docs.google.com/spreadsheets/d/${config.google.spreadsheetId}/edit`,
 			events: app.calendar.events,
-			backup: 'Dan'
+			backup: 'Dan',
+			today: moment().format('M/D')
 		});
 	});
 

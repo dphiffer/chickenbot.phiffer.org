@@ -13,7 +13,9 @@
 			<th>Status</th>
 		</tr>
 		<% for (let event of events) { %>
-			<% if (event.sheet != 'Upcoming') { continue; } %>
+			<% if (event.sheet != 'Upcoming' || event.date < today) {
+				continue;
+			} %>
 			<tr>
 				<td><%= event.date %></td>
 				<td><%= event.task %></td>
