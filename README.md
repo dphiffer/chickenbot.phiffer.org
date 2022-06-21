@@ -1,4 +1,4 @@
-# chickenbot
+# 🐔 chickenbot
 
 Chicken care task rotation using a Google Sheet and Twilio
 
