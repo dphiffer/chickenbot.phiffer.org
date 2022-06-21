@@ -8,7 +8,9 @@ Chicken care task rotation using a Google Sheet and Twilio
 2. There should be 4 tabs: Upcoming, Archive, Tasks, People
 3. The Upcoming and Archive sheets should each have columns: date, time, task, person, status
 4. The Tasks sheet should have columns: name, question, frequency, time
-5. The People sheet should have columns: name, phone, status
+5. The People sheet should have columns: name, phone, status, away
+
+Date and time columns need to be formatted like "6/21" and "7:16 PM" for the matching logic to work.
 
 ## Add tasks
 
