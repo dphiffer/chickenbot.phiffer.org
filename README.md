@@ -20,7 +20,7 @@ The list of tasks get assigned to all the active people involved for a given wee
 
 * __name:__ is how the task appears in the schedule
 * __question:__ gets sent in the reminder text message, i.e., `Hi [name], [question]`
-* __frequency:__ how often the task happens (1 = every day, 7 = every week)
+* __frequency:__ how often the task happens (`1` = every day, `7` = every week)
 * __time:__ when the reminder gets sent (e.g., `8:00 AM` or `sunset` to schedule 10 minutes after when the sun sets)
 
 Example morning task:
@@ -43,7 +43,7 @@ Add the names and phone numbers for people who will be caring for the chickens.
 
 * __name:__ the person's name, currently assumed to be a single word without any spaces or punctuation
 * __phone:__ the person's phone number, formatting is flexible (e.g., `518-555-1212`)
-* __status:__ assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactivee`)
+* __status:__ assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactive`)
 * __away:__ a list of days the person is away, as a comma-separated list of [ISO 8601 formatted dates](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) (e.g., `2022-06-22, 2022-07-01`)
 
 ## Google auth
