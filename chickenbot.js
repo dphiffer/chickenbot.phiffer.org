@@ -129,22 +129,12 @@ var backup;
 				}
 			} else {
 				let days = sms.split(',');
-				let parseDay = input => {
-					input = input.trim();
-					if (moment(input, 'ddd').isValid()) {
-						return moment(input, 'ddd').format('YYYY-MM-DD');
-					} else if (moment(input, 'M/D').isValid()) {
-						return moment(input, 'M/D').format('YYYY-MM-DD');
-					} else {
-						return false;
-					}
-				};
 				let awayDays = app.people[person].away.split(', ');
 				for (let day of days) {
-					isoDay = parseDay(day);
+					isoDay = Calendar.parseDay(day);
 					if (! isoDay) {
 						await twilio.messages.create({
-							body: `Sorry I couldn't make sense of '${day}'. Try again by replying 'away'.`,
+							body: `Sorry I couldn't make sense of '${day}' (away dates must be in the future). Try again by replying 'away'.`,
 							from: config.chickenbotPhone,
 							to: app.people[person].phone
 						});

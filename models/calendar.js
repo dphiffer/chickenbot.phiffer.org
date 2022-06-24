@@ -7,6 +7,33 @@ class Calendar {
 		this.events = [];
 	}
 
+	static parseDay(input) {
+		let today = moment().format('YYYY-MM-DD');
+		input = input.trim();
+		let formats = {
+			'dd': 'weeks',
+			'ddd': 'weeks',
+			'dddd': 'weeks',
+			'M/D': 'years',
+			'YYYY-MM-DD': null
+		};
+		for (let format in formats) {
+			if (moment(input, format).isValid()) {
+				let day = moment(input, format);
+				if (day.format('YYYY-MM-DD') > today) {
+					return day.format('YYYY-MM-DD');
+				}
+				if (day.format('YYYY-MM-DD') == today) {
+					return false;
+				} else if (formats[format]) {
+					day.add(1, formats[format]);
+					return day.format('YYYY-MM-DD');
+				}
+			}
+		}
+		return false;
+	}
+
 	async addEvents(doc, sheetTitle) {
 		let sheet = doc.sheetsByTitle[sheetTitle];
 		let rows = await sheet.getRows();
