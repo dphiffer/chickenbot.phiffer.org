@@ -1,6 +1,8 @@
-# chickenbot
+# 🐔 chickenbot
 
-Chicken care task rotation using a Google Sheet and Twilio
+*Chicken care task rotation using a Google Sheet and Twilio*
+
+This software supports a small cohort of neighbors who share responsibility caring for a flock of chickens. It is somewhat flexible, but it does make some assumptions. There must be at least two people involved, tasks can't be more frequent than once per day, the designated backup person is assumed to understand they're the backstop for any given task.
 
 ## Google Sheet
 
@@ -8,9 +10,18 @@ Chicken care task rotation using a Google Sheet and Twilio
 2. There should be 4 tabs: Upcoming, Archive, Tasks, People
 3. The Upcoming and Archive sheets should each have columns: date, time, task, person, status
 4. The Tasks sheet should have columns: name, question, frequency, time
-5. The People sheet should have columns: name, phone, status
+5. The People sheet should have columns: name, phone, status, away
+
+Date and time columns need to be formatted like "6/21" and "7:16 PM" for the matching logic to work.
 
 ## Add tasks
+
+The list of tasks get assigned to all the active people involved for a given week.
+
+* __name:__ is how the task appears in the schedule
+* __question:__ gets sent in the reminder text message, i.e., `Hi [name], [question]`
+* __frequency:__ how often the task happens (`1` = every day, `7` = every week)
+* __time:__ when the reminder gets sent (e.g., `8:00 AM` or `sunset` to schedule 10 minutes after when the sun sets)
 
 Example morning task:
 
@@ -26,13 +37,14 @@ Example evening task:
 * frequency: 1
 * time: sunset
 
-Assigning `sunset` as the time will adjust the timing according to when the sun sets on a given date (it actually uses 10 minutes after sunset).
-
 ## Add people
 
-Add names and phone numbers for people who will be caring for the chickens. Assigning the status `active` will include a person in the rotation for a given week.
+Add the names and phone numbers for people who will be caring for the chickens.
 
-Names are currently assumed to be a single word, a first name without any spaces or punctuation.
+* __name:__ the person's name, currently assumed to be a single word without any spaces or punctuation
+* __phone:__ the person's phone number, formatting is flexible (e.g., `518-555-1212`)
+* __status:__ assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactive`)
+* __away:__ a list of days the person is away, as a comma-separated list of [ISO 8601 formatted dates](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) (e.g., `2022-06-22, 2022-07-01`)
 
 ## Google auth
 
