@@ -53,7 +53,7 @@ Add the names and phone numbers for people who will be caring for the chickens.
 
 ## Configuration
 
-1. Copy `config.js.example` to `config.js`
+1. Copy `ts/config.ts.example` to `ts/config.ts`
 2. Set `url` to the public facing server URL for chickenbot.
 3. Set the `timezone` and `latitude`/`longitude` coordinates (used for calculating sunset times). You can find coordinate values in the URL from [Google Maps](https://maps.google.com/).
 4. Set `chickenbotPhone` as the phone number for the bot (from Twilio)
@@ -65,6 +65,12 @@ Add the names and phone numbers for people who will be caring for the chickens.
 
 ```
 npm install
+```
+
+## Compile TypeScript
+
+```
+npm run build
 ```
 
 ## Run the server
@@ -91,5 +97,5 @@ From the designated backup phone:
 
 * Send a `schedule` SMS to the chickenbot phone number to schedule tasks for the coming week
 * Send `announce: [message]` to relay a message to everyone
-* Send `[name]: [message]` to relay a message to a particular person by name
+* Send `[name]: [message]` to relay a message to a particular person by name (subsequent messages will send to that same person, no need to add `[name]:`)
 * Send `backup: [name]` to assign the backup role to another person

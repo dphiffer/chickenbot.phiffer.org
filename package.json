@@ -16,8 +16,12 @@
     "suntimes": "^6.0.2",
     "twilio": "^3.77.3"
   },
+  "devDependencies": {
+    "typescript": "^4.7.4"
+  },
   "scripts": {
-    "start": "node chickenbot.js"
+    "start": "node chickenbot.js",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
