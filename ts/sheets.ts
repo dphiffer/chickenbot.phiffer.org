@@ -2,11 +2,13 @@ import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { SheetsConfig } from './types';
 import { readFileSync } from 'fs';
 import Person from './models/person';
+import Task from './models/task';
 
 class Sheets {
 
     private static instance: Sheets;
     people: Person[] = [];
+    tasks: Task[] = [];
 
     doc: GoogleSpreadsheet;
     webhookSecret: string;
@@ -26,8 +28,14 @@ class Sheets {
         await this.instance.doc.useServiceAccountAuth(creds);
 	    await this.instance.doc.loadInfo();
         console.log(`Initialized ${this.instance.doc.title}`);
-        this.instance.setupPeople();
+        await this.instance.setup();
         return this.instance;
+    }
+
+    async setup() {
+        await this.setupPeople();
+        await this.setupTasks();
+        return this;
     }
 
     async currentBackup() {
@@ -52,6 +60,14 @@ class Sheets {
         let rows = await sheet.getRows();
         for (let row of rows) {
             this.people.push(new Person(this, row));
+        }
+    }
+
+    async setupTasks() {
+        let sheet = this.doc.sheetsByTitle['Tasks'];
+        let rows = await sheet.getRows();
+        for (let row of rows) {
+            this.tasks.push(new Task(this, row));
         }
     }
     

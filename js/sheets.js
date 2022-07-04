@@ -15,9 +15,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const google_spreadsheet_1 = require("google-spreadsheet");
 const fs_1 = require("fs");
 const person_1 = __importDefault(require("./models/person"));
+const task_1 = __importDefault(require("./models/task"));
 class Sheets {
     constructor(config) {
         this.people = [];
+        this.tasks = [];
         this.doc = new google_spreadsheet_1.GoogleSpreadsheet(config.spreadsheetId);
         this.webhookSecret = config.webhookSecret;
     }
@@ -32,8 +34,15 @@ class Sheets {
             yield this.instance.doc.useServiceAccountAuth(creds);
             yield this.instance.doc.loadInfo();
             console.log(`Initialized ${this.instance.doc.title}`);
-            this.instance.setupPeople();
+            yield this.instance.setup();
             return this.instance;
+        });
+    }
+    setup() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.setupPeople();
+            yield this.setupTasks();
+            return this;
         });
     }
     currentBackup() {
@@ -60,6 +69,15 @@ class Sheets {
             let rows = yield sheet.getRows();
             for (let row of rows) {
                 this.people.push(new person_1.default(this, row));
+            }
+        });
+    }
+    setupTasks() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let sheet = this.doc.sheetsByTitle['Tasks'];
+            let rows = yield sheet.getRows();
+            for (let row of rows) {
+                this.tasks.push(new task_1.default(this, row));
             }
         });
     }
