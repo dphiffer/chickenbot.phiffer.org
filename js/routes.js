@@ -8,8 +8,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const sms_1 = require("./sms");
+const config_1 = __importDefault(require("./config"));
+const sheets_1 = __importDefault(require("./sheets"));
 function routes(app) {
     return __awaiter(this, void 0, void 0, function* () {
         app.get('/', (request, reply) => {
@@ -31,6 +36,20 @@ function routes(app) {
             }
             catch (err) {
                 return (0, sms_1.messageResponse)(reply, err.message);
+            }
+        }));
+        app.post('/update', (request, reply) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                let sheets = yield sheets_1.default.getInstance(config_1.default.google);
+                let event = yield sheets.updateEvent(request.body);
+                return {
+                    event: event
+                };
+            }
+            catch (err) {
+                return {
+                    error: err.message
+                };
             }
         }));
     });

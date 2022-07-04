@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const google_spreadsheet_1 = require("google-spreadsheet");
 const fs_1 = require("fs");
+const calendar_1 = __importDefault(require("./calendar"));
 const person_1 = __importDefault(require("./models/person"));
 const task_1 = __importDefault(require("./models/task"));
 class Sheets {
@@ -23,7 +24,7 @@ class Sheets {
         this.doc = new google_spreadsheet_1.GoogleSpreadsheet(config.spreadsheetId);
         this.webhookSecret = config.webhookSecret;
     }
-    static init(config) {
+    static getInstance(config) {
         return __awaiter(this, void 0, void 0, function* () {
             if (this.instance) {
                 return this.instance;
@@ -45,6 +46,40 @@ class Sheets {
             return this;
         });
     }
+    setupPeople() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let sheet = this.doc.sheetsByTitle['People'];
+            let rows = yield sheet.getRows();
+            for (let row of rows) {
+                this.people.push(new person_1.default(this, row));
+            }
+        });
+    }
+    setupTasks() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let sheet = this.doc.sheetsByTitle['Tasks'];
+            let rows = yield sheet.getRows();
+            for (let row of rows) {
+                this.tasks.push(new task_1.default(row));
+            }
+        });
+    }
+    updateEvent(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (data.secret != this.webhookSecret) {
+                throw new Error('Webhook secret did not match');
+            }
+            let calendar = yield calendar_1.default.getInstance(this);
+            let event = calendar.getEvent(data.date, data.task);
+            if (!event) {
+                throw new Error('No matching event found');
+            }
+            event.time = data.time;
+            event.person = data.person;
+            event.status = data.status;
+            return event;
+        });
+    }
     currentBackup() {
         return __awaiter(this, void 0, void 0, function* () {
             for (let person of this.people) {
@@ -60,24 +95,6 @@ class Sheets {
                 yield row.save();
                 this.people[row.name].status = 'backup';
                 return this.people[row.name];
-            }
-        });
-    }
-    setupPeople() {
-        return __awaiter(this, void 0, void 0, function* () {
-            let sheet = this.doc.sheetsByTitle['People'];
-            let rows = yield sheet.getRows();
-            for (let row of rows) {
-                this.people.push(new person_1.default(this, row));
-            }
-        });
-    }
-    setupTasks() {
-        return __awaiter(this, void 0, void 0, function* () {
-            let sheet = this.doc.sheetsByTitle['Tasks'];
-            let rows = yield sheet.getRows();
-            for (let row of rows) {
-                this.tasks.push(new task_1.default(this, row));
             }
         });
     }

@@ -33,8 +33,18 @@ interface IncomingMessage {
     [property: string]: string
 }
 
+interface EventUpdate {
+    secret: string;
+    date: string;
+    time: string;
+    task: string;
+    person: string;
+    status: string;
+}
+
 export {
     Config,
     SheetsConfig,
-    IncomingMessage
+    IncomingMessage,
+    EventUpdate
 };

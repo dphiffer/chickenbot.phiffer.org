@@ -3,14 +3,12 @@ import Sheets from '../sheets';
 
 class Task {
 
-	sheets: Sheets;
 	name: string;
 	question: string;
 	frequency: number;
 	time: string;
 
-	constructor(sheets: Sheets, row: GoogleSpreadsheetRow) {
-		this.sheets = sheets;
+	constructor(row: GoogleSpreadsheetRow) {
 		this.name = row.name;
 		this.question = row.question;
 		this.frequency = parseInt(row.frequency);

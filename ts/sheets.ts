@@ -1,6 +1,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
-import { SheetsConfig } from './types';
+import { SheetsConfig, EventUpdate } from './types';
 import { readFileSync } from 'fs';
+import Calendar from './calendar';
 import Person from './models/person';
 import Task from './models/task';
 
@@ -18,7 +19,7 @@ class Sheets {
         this.webhookSecret = config.webhookSecret;
     }
 
-    static async init(config: SheetsConfig) {
+    static async getInstance(config: SheetsConfig) {
         if (this.instance) {
             return this.instance;
         }
@@ -38,6 +39,37 @@ class Sheets {
         return this;
     }
 
+    async setupPeople() {
+        let sheet = this.doc.sheetsByTitle['People'];
+        let rows = await sheet.getRows();
+        for (let row of rows) {
+            this.people.push(new Person(this, row));
+        }
+    }
+
+    async setupTasks() {
+        let sheet = this.doc.sheetsByTitle['Tasks'];
+        let rows = await sheet.getRows();
+        for (let row of rows) {
+            this.tasks.push(new Task(row));
+        }
+    }
+
+    async updateEvent(data: EventUpdate) {
+        if (data.secret != this.webhookSecret) {
+            throw new Error('Webhook secret did not match');
+        }
+        let calendar = await Calendar.getInstance(this);
+        let event = calendar.getEvent(data.date, data.task);
+        if (! event) {
+            throw new Error('No matching event found');
+        }
+        event.time = data.time;
+        event.person = data.person;
+        event.status = data.status;
+        return event;
+    }
+
     async currentBackup() {
 		for (let person of this.people) {
 			if (person.status == 'backup') {
@@ -54,22 +86,6 @@ class Sheets {
 			return this.people[row.name];
 		}
 	}
-
-    async setupPeople() {
-        let sheet = this.doc.sheetsByTitle['People'];
-        let rows = await sheet.getRows();
-        for (let row of rows) {
-            this.people.push(new Person(this, row));
-        }
-    }
-
-    async setupTasks() {
-        let sheet = this.doc.sheetsByTitle['Tasks'];
-        let rows = await sheet.getRows();
-        for (let row of rows) {
-            this.tasks.push(new Task(this, row));
-        }
-    }
     
 }
 
