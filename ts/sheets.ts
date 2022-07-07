@@ -34,12 +34,13 @@ class Sheets {
     }
 
     async setup() {
-        await this.setupPeople();
-        await this.setupTasks();
+        await this.loadPeople();
+        await this.loadTasks();
         return this;
     }
 
-    async setupPeople() {
+    async loadPeople() {
+        this.people = [];
         let sheet = this.doc.sheetsByTitle['People'];
         let rows = await sheet.getRows();
         for (let row of rows) {
@@ -47,7 +48,8 @@ class Sheets {
         }
     }
 
-    async setupTasks() {
+    async loadTasks() {
+        this.tasks = [];
         let sheet = this.doc.sheetsByTitle['Tasks'];
         let rows = await sheet.getRows();
         for (let row of rows) {
@@ -69,6 +71,12 @@ class Sheets {
         event.status = data.status;
         return event;
     }
+
+    getActivePeople() {
+		return this.people.filter(p => {
+            return (p.status == 'active' || p.status == 'backup');
+        });
+	}
 
     async currentBackup() {
 		for (let person of this.people) {

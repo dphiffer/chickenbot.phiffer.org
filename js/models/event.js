@@ -1,13 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class Event {
-    constructor(sheet, row) {
+    constructor(sheet, data) {
         this.sheet = sheet;
-        this.date = row.date;
-        this.time = row.time;
-        this.task = row.task;
-        this.person = row.person;
-        this.status = row.status;
+        this.date = data.date;
+        this.time = data.time;
+        this.task = data.task;
+        this.person = data.person;
+        this.status = data.status;
     }
 }
 exports.default = Event;
+//# sourceMappingURL=event.js.map

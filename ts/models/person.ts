@@ -9,6 +9,7 @@ class Person {
 	phone: string;
 	status: string;
 	away: string;
+	assigned: string = "";
 
 	constructor(sheets: Sheets, row: GoogleSpreadsheetRow) {
 		this.sheets = sheets;

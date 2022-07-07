@@ -41,13 +41,14 @@ class Sheets {
     }
     setup() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.setupPeople();
-            yield this.setupTasks();
+            yield this.loadPeople();
+            yield this.loadTasks();
             return this;
         });
     }
-    setupPeople() {
+    loadPeople() {
         return __awaiter(this, void 0, void 0, function* () {
+            this.people = [];
             let sheet = this.doc.sheetsByTitle['People'];
             let rows = yield sheet.getRows();
             for (let row of rows) {
@@ -55,8 +56,9 @@ class Sheets {
             }
         });
     }
-    setupTasks() {
+    loadTasks() {
         return __awaiter(this, void 0, void 0, function* () {
+            this.tasks = [];
             let sheet = this.doc.sheetsByTitle['Tasks'];
             let rows = yield sheet.getRows();
             for (let row of rows) {
@@ -80,6 +82,11 @@ class Sheets {
             return event;
         });
     }
+    getActivePeople() {
+        return this.people.filter(p => {
+            return (p.status == 'active' || p.status == 'backup');
+        });
+    }
     currentBackup() {
         return __awaiter(this, void 0, void 0, function* () {
             for (let person of this.people) {
@@ -100,3 +107,4 @@ class Sheets {
     }
 }
 exports.default = Sheets;
+//# sourceMappingURL=sheets.js.map

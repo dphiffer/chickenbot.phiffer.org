@@ -12,16 +12,18 @@ interface Config {
     },
     logger: boolean | LoggerOptions.LoggerOptions,
     google: SheetsConfig,
-    twilio: {
-        accountSid: string;
-        authToken: string;
-    }
+    twilio: SMSConfig
 }
 
 interface SheetsConfig {
     spreadsheetId: string;
     credentials: string;
     webhookSecret: string;
+}
+
+interface SMSConfig {
+    accountSid: string;
+    authToken: string;
 }
 
 interface IncomingMessage {
@@ -45,6 +47,7 @@ interface EventUpdate {
 export {
     Config,
     SheetsConfig,
+    SMSConfig,
     IncomingMessage,
     EventUpdate
 };

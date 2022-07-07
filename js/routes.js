@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const sms_1 = require("./sms");
+const sms_1 = __importDefault(require("./sms"));
 const config_1 = __importDefault(require("./config"));
 const sheets_1 = __importDefault(require("./sheets"));
 function routes(app) {
@@ -23,10 +23,12 @@ function routes(app) {
             };
         });
         app.post('/sms', (request, reply) => __awaiter(this, void 0, void 0, function* () {
+            let sheets = yield sheets_1.default.getInstance(config_1.default.google);
+            let sms = sms_1.default.getInstance(config_1.default.twilio, sheets);
             try {
-                let response = (0, sms_1.handleMessage)(request.body);
+                let response = yield sms.handleMessage(request.body);
                 if (response) {
-                    return (0, sms_1.messageResponse)(reply, response);
+                    return sms.messageResponse(reply, response);
                 }
                 else {
                     return {
@@ -35,7 +37,8 @@ function routes(app) {
                 }
             }
             catch (err) {
-                return (0, sms_1.messageResponse)(reply, err.message);
+                app.log.error(err);
+                return sms.messageResponse(reply, err.message);
             }
         }));
         app.post('/update', (request, reply) => __awaiter(this, void 0, void 0, function* () {
@@ -55,3 +58,4 @@ function routes(app) {
     });
 }
 exports.default = routes;
+//# sourceMappingURL=routes.js.map

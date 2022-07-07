@@ -19,6 +19,7 @@ const moment_timezone_1 = __importDefault(require("moment-timezone"));
 const routes_1 = __importDefault(require("./routes"));
 const sheets_1 = __importDefault(require("./sheets"));
 const calendar_1 = __importDefault(require("./calendar"));
+const sms_1 = __importDefault(require("./sms"));
 const app = (0, fastify_1.default)({
     logger: config_1.default.logger
 });
@@ -27,6 +28,8 @@ app.register(routes_1.default);
 moment_timezone_1.default.tz.setDefault(config_1.default.timezone);
 (() => __awaiter(void 0, void 0, void 0, function* () {
     let sheets = yield sheets_1.default.getInstance(config_1.default.google);
-    yield calendar_1.default.getInstance(sheets);
+    sms_1.default.getInstance(config_1.default.twilio, sheets);
+    calendar_1.default.getInstance(sheets);
 }))();
 exports.default = app;
+//# sourceMappingURL=app.js.map

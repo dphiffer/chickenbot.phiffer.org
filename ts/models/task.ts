@@ -8,6 +8,10 @@ class Task {
 	frequency: number;
 	time: string;
 
+	lastRun: string | null = null;
+	lastPerson: string | null = null;
+	nextRun: string | null = null;
+
 	constructor(row: GoogleSpreadsheetRow) {
 		this.name = row.name;
 		this.question = row.question;

@@ -10,13 +10,13 @@ class Event {
     person: string;
     status: string;
 
-	constructor(sheet: string, row: GoogleSpreadsheetRow) {
+	constructor(sheet: string, data: any) {
 		this.sheet = sheet
-		this.date = row.date;
-		this.time = row.time;
-		this.task = row.task;
-        this.person = row.person;
-		this.status = row.status;
+		this.date = data.date;
+		this.time = data.time;
+		this.task = data.task;
+        this.person = data.person;
+		this.status = data.status;
 	}
 }
 
