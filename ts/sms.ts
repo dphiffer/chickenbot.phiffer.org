@@ -2,6 +2,7 @@ import config from './config';
 import { FastifyReply } from 'fastify';
 import { SMSConfig, IncomingMessage } from './types';
 import { twiml } from 'twilio';
+
 import twilio from 'twilio';
 import Sheets from './sheets';
 import Calendar from './calendar';
@@ -13,6 +14,7 @@ class SMS {
 
     twilio: twilio.Twilio;
     sheets: Sheets;
+    phone: string;
     
     static getInstance(config: SMSConfig, sheets: Sheets) {
         if (this.instance) {
@@ -25,6 +27,7 @@ class SMS {
     private constructor(config: SMSConfig, sheets: Sheets) {
         this.twilio = twilio(config.accountSid, config.authToken);
         this.sheets = sheets;
+        this.phone = config.phone;
     }
 
     async handleMessage(msg: IncomingMessage): Promise<string> {
@@ -39,10 +42,10 @@ class SMS {
     async handleBackupMessages(msg: IncomingMessage, person: Person) {
         let sms = msg.Body.trim();
         let sheets = await Sheets.getInstance(config.google);
-        let calendar = await Calendar.getInstance(sheets);
+        let calendar = await Calendar.getInstance(config.calendar, sheets);
         if (sms.match(/^schedule[.!]?$/i)) {
+            await this.sendMessage('Ok, scheduling tasks', person);
             await calendar.scheduleTasks();
-            return 'Ok, scheduling tasks';
         }
         return '';
     }
@@ -56,6 +59,14 @@ class SMS {
             throw new Error('Sorry, I don’t know who you are.');
         }
         return person;
+    }
+
+    async sendMessage(body: string, person: Person) {
+        await this.twilio.messages.create({
+            from: this.phone,
+            to: person.phone,
+            body: body
+        });
     }
 
     messageResponse(reply: FastifyReply, response: string) {

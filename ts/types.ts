@@ -1,18 +1,15 @@
 import LoggerOptions from 'pino';
 
 interface Config {
-	url: string;
-	phone: string;
-	timezone: string;
-	latitude: number;
-	longitude: number;
 	server: {
         port: number;
         host: string;
-    },
-    logger: boolean | LoggerOptions.LoggerOptions,
-    google: SheetsConfig,
-    twilio: SMSConfig
+        url: string;
+    }
+    logger: boolean | LoggerOptions.LoggerOptions;
+    google: SheetsConfig;
+    twilio: SMSConfig;
+    calendar: CalendarConfig;
 }
 
 interface SheetsConfig {
@@ -24,15 +21,22 @@ interface SheetsConfig {
 interface SMSConfig {
     accountSid: string;
     authToken: string;
+    phone: string;
+}
+
+interface CalendarConfig {
+    timezone: string;
+    latitude: number;
+    longitude: number;
 }
 
 interface IncomingMessage {
-    ApiVersion: '2010-04-01',
-    AccountSid: string,
-    Body: string,
-    NumMedia: string,
-    From: string,
-    [property: string]: string
+    ApiVersion: '2010-04-01';
+    AccountSid: string;
+    Body: string;
+    NumMedia: string;
+    From: string;
+    [property: string]: string;
 }
 
 interface EventUpdate {
@@ -48,6 +52,7 @@ export {
     Config,
     SheetsConfig,
     SMSConfig,
+    CalendarConfig,
     IncomingMessage,
     EventUpdate
 };

@@ -1,14 +1,10 @@
 import { Config } from './types';
 
 const config: Config = {
-	url: 'http://localhost:3000/',
-	phone: '+15185551212',
-	timezone: 'America/New_York',
-	latitude: 0.000,
-	longitude: 0.000,
 	server: {
 		port: 3000,
-		host: '0.0.0.0'
+		host: '0.0.0.0',
+		url: 'http://localhost:3000/'
 	},
 	logger: {
 		transport: {
@@ -27,7 +23,13 @@ const config: Config = {
 	},
 	twilio: {
 		accountSid: '<Twilio account SID from console.twilio.com>',
-		authToken: '<Twilio account auth token from console.twilio.com>'
+		authToken: '<Twilio account auth token from console.twilio.com>',
+		phone: '+15185551212',
+	},
+	calendar: {
+		timezone: 'America/New_York',
+		latitude: 0.000,
+		longitude: 0.000,
 	}
 };
 

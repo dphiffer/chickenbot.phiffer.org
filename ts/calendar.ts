@@ -1,10 +1,10 @@
 import * as moment from 'moment-timezone';
 import * as suntimes from 'suntimes';
+import { CalendarConfig } from './types';
 import Sheets from './sheets';
 import Person from './models/person';
 import Task from './models/task';
 import Event from './models/event';
-import config from './config';
 
 class Calendar {
 
@@ -15,15 +15,23 @@ class Calendar {
 	queue: string[] = [];
 	index: number = 0;
 
-	private constructor(sheets: Sheets) {
+	timezone: string;
+	latitude: number;
+	longitude: number;
+
+	private constructor(config: CalendarConfig, sheets: Sheets) {
 		this.sheets = sheets;
+		this.timezone = config.timezone;
+		this.latitude = config.latitude;
+		this.longitude = config.longitude;
+		moment.tz.setDefault(config.timezone);
 	}
 
-	static async getInstance(sheets: Sheets) {
+	static async getInstance(config: CalendarConfig, sheets: Sheets) {
 		if (this.instance) {
 			return this.instance;
 		}
-		this.instance = new Calendar(sheets);
+		this.instance = new Calendar(config, sheets);
 		await this.instance.setup();
 		return this.instance;
 	}
@@ -177,11 +185,11 @@ class Calendar {
 		if (time == 'sunset') {
 			let sunsetUTC = suntimes.getSunsetDateTimeUtc(
 				date.toDate(),
-				config.latitude,
-				config.longitude
+				this.latitude,
+				this.longitude
 			);
 			let sunsetLocal = moment.tz(sunsetUTC, 'UTC').add(10, 'minutes');
-			return sunsetLocal.tz(config.timezone).format('h:mm A');
+			return sunsetLocal.tz(this.timezone).format('h:mm A');
 		} else {
 			return time;
 		}
