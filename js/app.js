@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = __importDefault(require("./config"));
 const fastify_1 = __importDefault(require("fastify"));
 const formbody_1 = __importDefault(require("@fastify/formbody"));
-const moment_timezone_1 = __importDefault(require("moment-timezone"));
 const routes_1 = __importDefault(require("./routes"));
 const sheets_1 = __importDefault(require("./sheets"));
 const calendar_1 = __importDefault(require("./calendar"));
@@ -25,11 +24,10 @@ const app = (0, fastify_1.default)({
 });
 app.register(formbody_1.default);
 app.register(routes_1.default);
-moment_timezone_1.default.tz.setDefault(config_1.default.timezone);
 (() => __awaiter(void 0, void 0, void 0, function* () {
     let sheets = yield sheets_1.default.getInstance(config_1.default.google);
     sms_1.default.getInstance(config_1.default.twilio, sheets);
-    calendar_1.default.getInstance(sheets);
+    calendar_1.default.getInstance(config_1.default.calendar, sheets);
 }))();
 exports.default = app;
 //# sourceMappingURL=app.js.map

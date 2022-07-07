@@ -4,13 +4,13 @@ import { CalendarConfig } from './types';
 import Sheets from './sheets';
 import Person from './models/person';
 import Task from './models/task';
-import Event from './models/event';
+import Assignment from './models/assignment';
 
 class Calendar {
 
 	private static instance: Calendar;
 	sheets: Sheets;
-	events: Event[] = [];
+	assignments: Assignment[] = [];
 
 	queue: string[] = [];
 	index: number = 0;
@@ -61,30 +61,30 @@ class Calendar {
 	}
 
 	async setup() {
-		await this.addEvents('Upcoming');
-		await this.addEvents('Archive');
+		await this.addAssignments('Upcoming');
+		await this.addAssignments('Archive');
 		this.markTaskDates();
 		return this;
 	}
 
-	async addEvents(sheetTitle: string) {
+	async addAssignments(sheetTitle: string) {
 		let sheet = this.sheets.doc.sheetsByTitle[sheetTitle];
 		let rows = await sheet.getRows();
 		for (let row of rows) {
-			this.addEvent(sheetTitle, row);
+			this.addAssignment(sheetTitle, row);
 		}
 	}
 
-	addEvent(sheet: string, row: any) {
-		let event = new Event(sheet, row);
-		this.events.push(event);
-		return event;
+	addAssignment(sheet: string, row: any) {
+		let assignment = new Assignment(sheet, row);
+		this.assignments.push(assignment);
+		return assignment;
 	}
 
-	getEvent(date: string, task: string) {
-		for (let event of this.events) {
-			if (event.date == date && event.task == task) {
-				return event;
+	getAssignment(date: string, task: string) {
+		for (let assignment of this.assignments) {
+			if (assignment.date == date && assignment.task == task) {
+				return assignment;
 			}
 		}
 	}
@@ -94,10 +94,10 @@ class Calendar {
 		await this.sheets.loadTasks();
 		this.setupQueue();
 		this.markTaskDates();
-		await this.archiveCompletedEvents();
-		let events = this.scheduleEventsForWeek();
-		await this.addUpcomingEvents(events);
-		return this.setAssignedEvents(events);
+		await this.archiveCompleted();
+		let assignments = this.scheduleForWeek();
+		await this.addUpcoming(assignments);
+		return this.setAssigned(assignments);
 	}
 
 	setupQueue() {
@@ -110,13 +110,13 @@ class Calendar {
 	markTaskDates() {
 		let tasks = this.sheets.tasks;
 		let fmt = 'YYYY-MM-DD';
-		for (let event of this.events) {
-			let eventDate = moment.default(event.date, 'M/D');
-			let [ task ] = tasks.filter(t => t.name == event.task);
-			if (task && (!task.lastRun || task.lastRun < eventDate.format(fmt))) {
-				task.lastRun = eventDate.format(fmt);
-				task.lastPerson = event.person;
-				task.nextRun = eventDate.add(task.frequency, 'days').format(fmt);
+		for (let assignment of this.assignments) {
+			let date = moment.default(assignment.date, 'M/D');
+			let [ task ] = tasks.filter(t => t.name == assignment.task);
+			if (task && (!task.lastRun || task.lastRun < date.format(fmt))) {
+				task.lastRun = date.format(fmt);
+				task.lastPerson = assignment.person;
+				task.nextRun = date.add(task.frequency, 'days').format(fmt);
 			}
 		}
 		let today = moment.default().format(fmt);
@@ -133,37 +133,37 @@ class Calendar {
 		}
 	}
 
-	scheduleEventsForWeek() {
+	scheduleForWeek() {
 		let now = moment.default();
-		let events: Event[] = [];
+		let assignments: Assignment[] = [];
 		for (let i = 0; i < 7; i++) {
 			let date = now.add(1, 'days');
-			let scheduled = this.scheduleEventsOnDate(date);
-			events = [...events, ...scheduled];
+			let scheduled = this.scheduleForDate(date);
+			assignments = [...assignments, ...scheduled];
 		}
-		return events;
+		return assignments;
 	}
 
-	scheduleEventsOnDate(date: moment.Moment) {
+	scheduleForDate(date: moment.Moment) {
 		let people = this.sheets.getActivePeople();
 		let iso8601 = 'YYYY-MM-DD';
 		let locale = 'M/D';
-		let events: Event[] = [];
+		let assignments: Assignment[] = [];
 		for (let task of this.sheets.tasks) {
 			if (task.nextRun && task.nextRun <= date.format(iso8601)) {
 				let person = this.selectPerson(task, people, date.format(iso8601));
-				let event = this.addEvent('Upcoming', new Event('Upcoming', {
+				let assignment = this.addAssignment('Upcoming', new Assignment('Upcoming', {
 					date: date.format(locale),
-					time: this.getEventTime(task.time, date),
+					time: this.getScheduleTime(task.time, date),
 					task: task.name,
 					person: person.name,
 					status: 'scheduled'
 				}));
-				events.push(event);
+				assignments.push(assignment);
 			}
 		}
 		this.markTaskDates();
-		return events;
+		return assignments;
 	}
 
 	selectPerson(task: Task, people: Person[], date: string): Person {
@@ -181,7 +181,7 @@ class Calendar {
 		return person;
 	}
 
-	getEventTime(time: string, date: moment.Moment) {
+	getScheduleTime(time: string, date: moment.Moment) {
 		if (time == 'sunset') {
 			let sunsetUTC = suntimes.getSunsetDateTimeUtc(
 				date.toDate(),
@@ -195,133 +195,81 @@ class Calendar {
 		}
 	}
 
-	async archiveCompletedEvents() {
+	async archiveCompleted() {
 		let upcoming = this.sheets.doc.sheetsByTitle['Upcoming'];
 		let archive = this.sheets.doc.sheetsByTitle['Archive'];
 		let today = moment.default().format('M/D');
 		let rows = await upcoming.getRows();
 		let pending = [];
 		for (let row of rows) {
-			let event = {
+			let assignment = {
 				date: row.date,
 				time: row.time,
 				task: row.task,
 				person: row.person,
 				status: row.status
 			};
-			await archive.addRow(event);
-			if (event.status != 'complete') {
-				pending.push(event);
+			await archive.addRow(assignment);
+			if (assignment.status != 'complete') {
+				pending.push(assignment);
 			}
 		}
 		await upcoming.clearRows();
 		await upcoming.addRows(pending);
 	}
 
-	async addUpcomingEvents(events: any[]) {
+	async addUpcoming(assignments: Assignment[]) {
 		let sheet = this.sheets.doc.sheetsByTitle['Upcoming'];
-		for (let event of events) {
-			await sheet.addRow(event);
+		for (let assignment of assignments) {
+			await sheet.addRow({
+				date: assignment.date,
+				time: assignment.time,
+				task: assignment.task,
+				person: assignment.person,
+				status: assignment.status
+			});
 		}
 	}
 
-	setAssignedEvents(events: Event[]) {
+	setAssigned(assignments: Assignment[]) {
 		let people = this.sheets.getActivePeople();
 		for (let person of people) {
 			let assigned: string[] = [];
-			for (let event of events) {
-				if (event.person == person.name) {
-					let date = moment.default(event.date, 'M/D').format('ddd M/D');
-					assigned.push(`${date}: ${event.task}`);
+			for (let assignment of assignments) {
+				if (assignment.person == person.name) {
+					let date = moment.default(assignment.date, 'M/D').format('ddd M/D');
+					assigned.push(`${date}: ${assignment.task}`);
 				}
 			}
-			person.assigned = `Hi ${person.name}, here are your scheduled chicken tasks for this week:\n${assigned.join('\n')}`;
+			person.schedule = `Hi ${person.name}, here are your scheduled chicken tasks for this week:\n${assigned.join('\n')}`;
 		}
 		return people;
 	}
 
-	// async checkAssignments(app) {
-	// 	let assignments = {};
-	// 	let eventFormat = 'M/D h:mm A';
-	// 	let today = moment().format('YYYY-MM-DD');
-	// 	let now = moment().format('HH:mm:ss');
-	// 	for (let event of this.events) {
-	// 		if (event.status != 'scheduled') {
-	// 			continue;
-	// 		}
-	// 		let eventTime = moment(`${event.date} ${event.time}`, eventFormat);
-	// 		if (eventTime.format('YYYY-MM-DD') == today &&
-	// 			eventTime.format('HH:mm:ss') <= now) {
-	// 			let person = app.people[event.person];
-	// 			let task = app.tasks[event.task];
-	// 			if (! person || ! task) {
-	// 				continue;
-	// 			}
-	// 			person.assignment = event;
-	// 			assignments[event.person] = `Hi ${event.person}, ${task.question} [reply Y or Yes or Snooze for more time]`;
-	// 			await this.markAssignment(app, event, 'pending');
-	// 		}
-	// 	}
-	// 	return assignments;
-	// }
-
-	// async markAssignment(app, assignment, status) {
-	// 	let assignmentId = `${assignment.date} ${assignment.task}`;
-	// 	let sheet = app.doc.sheetsByTitle['Upcoming'];
-	// 	let rows = await sheet.getRows();
-	// 	let index = 0;
-	// 	for (let event of this.events) {
-	// 		if (assignmentId == `${event.date} ${event.task}`) {
-	// 			this.events[index].status = status;
-	// 			break;
-	// 		}
-	// 		index++;
-	// 	}
-	// 	for (let row of rows) {
-	// 		if (assignmentId == `${row.date} ${row.task}`) {
-	// 			row.status = status;
-	// 			await row.save();
-	// 		}
-	// 	}
-	// }
-
-	// async snoozeAssignment(app, assignment) {
-	// 	let assignmentId = `${assignment.date} ${assignment.task}`;
-	// 	let sheet = app.doc.sheetsByTitle['Upcoming'];
-	// 	let rows = await sheet.getRows();
-	// 	let index = 0;
-	// 	let rescheduled;
-	// 	for (let event of this.events) {
-	// 		if (assignmentId == `${event.date} ${event.task}`) {
-	// 			rescheduled = moment().add('1', 'hours').format('h:mm A');
-	// 			this.events[index].time = rescheduled;
-	// 			this.events[index].status = 'scheduled';
-	// 			break;
-	// 		}
-	// 		index++;
-	// 	}
-	// 	for (let row of rows) {
-	// 		if (assignmentId == `${row.date} ${row.task}`) {
-	// 			row.time = rescheduled;
-	// 			row.status = 'scheduled';
-	// 			await row.save();
-	// 			break;
-	// 		}
-	// 	}
-	// 	return rescheduled;
-	// }
-
-	// allEventsComplete() {
-	// 	for (let event of this.events) {
-	// 		if (event.sheet != 'Upcoming') {
-	// 			continue;
-	// 		}
-	// 		if (event.status != 'complete') {
-	// 			return false;
-	// 		}
-	// 	}
-	// 	return true;
-	// }
+	async checkAssignments() {
+		let assignmentsDue = [];
+		let today = moment.default().format('YYYY-MM-DD');
+		let now = moment.default().format('HH:mm:ss');
+		for (let assignment of this.assignments) {
+			if (assignment.status != 'scheduled') {
+				continue;
+			}
+			let dateTime = moment.default(`${assignment.date} ${assignment.time}`, 'M/D h:mm A');
+			if (dateTime.format('YYYY-MM-DD') == today &&
+				dateTime.format('HH:mm:ss') <= now) {
+				let [ person ]  = this.sheets.people.filter(p => p.name == assignment.person);
+				let [ task ] = this.sheets.tasks.filter(t => t.name == assignment.task);
+				if (!person || !task) {
+					continue;
+				}
+				person.assignment = assignment;
+				assignment.status = 'pending';
+				await assignment.save();
+				assignmentsDue.push(assignment);
+			}
+		}
+		return assignmentsDue;
+	}
 }
 
 export default Calendar;

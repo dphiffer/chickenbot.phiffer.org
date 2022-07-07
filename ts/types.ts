@@ -39,8 +39,7 @@ interface IncomingMessage {
     [property: string]: string;
 }
 
-interface EventUpdate {
-    secret: string;
+interface AssignmentUpdate {
     date: string;
     time: string;
     task: string;
@@ -54,5 +53,5 @@ export {
     SMSConfig,
     CalendarConfig,
     IncomingMessage,
-    EventUpdate
+    AssignmentUpdate
 };

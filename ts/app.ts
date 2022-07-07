@@ -13,12 +13,10 @@ const app = Fastify({
 app.register(formBodyPlugin);
 app.register(routes);
 
-moment.tz.setDefault(config.timezone);
-
 (async () => {
     let sheets = await Sheets.getInstance(config.google);
     SMS.getInstance(config.twilio, sheets);
-    Calendar.getInstance(sheets);
+    Calendar.getInstance(config.calendar, sheets);
 })();
 
 export default app;

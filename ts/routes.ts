@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { IncomingMessage, EventUpdate } from './types';
+import { IncomingMessage, AssignmentUpdate } from './types';
 import SMS from './sms';
 import config from './config';
 import Sheets from './sheets';
@@ -29,12 +29,15 @@ async function routes(app: FastifyInstance) {
         }
     });
 
-    app.post('/update', async (request: FastifyRequest<{ Body: EventUpdate }>, reply: FastifyReply) => {
+    app.post('/update', async (request: FastifyRequest<{ Body: AssignmentUpdate & { secret: string } }>, reply: FastifyReply) => {
         try {
             let sheets = await Sheets.getInstance(config.google);
-            let event = await sheets.updateEvent(request.body);
+            if (request.body.secret != config.google.webhookSecret) {
+                throw new Error('Invalid webhook secret.');
+            }
+            let assignment = await sheets.updateAssignment(request.body);
             return {
-                event: event
+                assignment: assignment
             };
         } catch (err) {
             return {

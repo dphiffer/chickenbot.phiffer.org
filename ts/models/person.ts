@@ -1,6 +1,7 @@
 import { GoogleSpreadsheetRow } from 'google-spreadsheet';
 import moment from 'moment-timezone';
 import Sheets from '../sheets';
+import Assignment from './assignment';
 
 class Person {
 
@@ -9,7 +10,8 @@ class Person {
 	phone: string;
 	status: string;
 	away: string;
-	assigned: string = "";
+	schedule: null | string = null;
+	assignment: null | Assignment = null;
 
 	constructor(sheets: Sheets, row: GoogleSpreadsheetRow) {
 		this.sheets = sheets;

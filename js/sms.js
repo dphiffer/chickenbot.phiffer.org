@@ -21,6 +21,7 @@ class SMS {
     constructor(config, sheets) {
         this.twilio = (0, twilio_2.default)(config.accountSid, config.authToken);
         this.sheets = sheets;
+        this.phone = config.phone;
     }
     static getInstance(config, sheets) {
         if (this.instance) {
@@ -43,10 +44,10 @@ class SMS {
         return __awaiter(this, void 0, void 0, function* () {
             let sms = msg.Body.trim();
             let sheets = yield sheets_1.default.getInstance(config_1.default.google);
-            let calendar = yield calendar_1.default.getInstance(sheets);
+            let calendar = yield calendar_1.default.getInstance(config_1.default.calendar, sheets);
             if (sms.match(/^schedule[.!]?$/i)) {
+                yield this.sendMessage('Ok, scheduling tasks', person);
                 yield calendar.scheduleTasks();
-                return 'Ok, scheduling tasks';
             }
             return '';
         });
@@ -60,6 +61,15 @@ class SMS {
             throw new Error('Sorry, I don’t know who you are.');
         }
         return person;
+    }
+    sendMessage(body, person) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.twilio.messages.create({
+                from: this.phone,
+                to: person.phone,
+                body: body
+            });
+        });
     }
     messageResponse(reply, response) {
         let rsp = new twilio_1.twiml.MessagingResponse();

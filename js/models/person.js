@@ -15,7 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const moment_timezone_1 = __importDefault(require("moment-timezone"));
 class Person {
     constructor(sheets, row) {
-        this.assigned = "";
+        this.schedule = null;
+        this.assignment = null;
         this.sheets = sheets;
         this.name = row.name;
         this.phone = this.normalizePhone(row.phone);

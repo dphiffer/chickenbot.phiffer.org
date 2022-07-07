@@ -44,9 +44,12 @@ function routes(app) {
         app.post('/update', (request, reply) => __awaiter(this, void 0, void 0, function* () {
             try {
                 let sheets = yield sheets_1.default.getInstance(config_1.default.google);
-                let event = yield sheets.updateEvent(request.body);
+                if (request.body.secret != config_1.default.google.webhookSecret) {
+                    throw new Error('Invalid webhook secret.');
+                }
+                let assignment = yield sheets.updateAssignment(request.body);
                 return {
-                    event: event
+                    assignment: assignment
                 };
             }
             catch (err) {

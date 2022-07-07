@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const config_1 = __importDefault(require("./config"));
 const google_spreadsheet_1 = require("google-spreadsheet");
 const fs_1 = require("fs");
 const calendar_1 = __importDefault(require("./calendar"));
@@ -66,20 +67,17 @@ class Sheets {
             }
         });
     }
-    updateEvent(data) {
+    updateAssignment(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (data.secret != this.webhookSecret) {
-                throw new Error('Webhook secret did not match');
+            let calendar = yield calendar_1.default.getInstance(config_1.default.calendar, this);
+            let assignment = calendar.getAssignment(data.date, data.task);
+            if (!assignment) {
+                throw new Error('No matching assignment found');
             }
-            let calendar = yield calendar_1.default.getInstance(this);
-            let event = calendar.getEvent(data.date, data.task);
-            if (!event) {
-                throw new Error('No matching event found');
-            }
-            event.time = data.time;
-            event.person = data.person;
-            event.status = data.status;
-            return event;
+            assignment.time = data.time;
+            assignment.person = data.person;
+            assignment.status = data.status;
+            return assignment;
         });
     }
     getActivePeople() {

@@ -1,5 +1,6 @@
+import config from './config';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
-import { SheetsConfig, EventUpdate } from './types';
+import { SheetsConfig, AssignmentUpdate } from './types';
 import { readFileSync } from 'fs';
 import Calendar from './calendar';
 import Person from './models/person';
@@ -57,19 +58,16 @@ class Sheets {
         }
     }
 
-    async updateEvent(data: EventUpdate) {
-        if (data.secret != this.webhookSecret) {
-            throw new Error('Webhook secret did not match');
+    async updateAssignment(data: AssignmentUpdate) {
+        let calendar = await Calendar.getInstance(config.calendar, this);
+        let assignment = calendar.getAssignment(data.date, data.task);
+        if (! assignment) {
+            throw new Error('No matching assignment found');
         }
-        let calendar = await Calendar.getInstance(this);
-        let event = calendar.getEvent(data.date, data.task);
-        if (! event) {
-            throw new Error('No matching event found');
-        }
-        event.time = data.time;
-        event.person = data.person;
-        event.status = data.status;
-        return event;
+        assignment.time = data.time;
+        assignment.person = data.person;
+        assignment.status = data.status;
+        return assignment;
     }
 
     getActivePeople() {
