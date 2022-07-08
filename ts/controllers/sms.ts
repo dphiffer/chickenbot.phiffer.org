@@ -1,4 +1,5 @@
 import config from '../config';
+import * as moment from 'moment-timezone';
 import { FastifyReply } from 'fastify';
 import { SMSConfig, IncomingMessage, PersonContext } from '../types';
 import { twiml } from 'twilio';
@@ -81,6 +82,7 @@ class SMS {
         }
         if (SMS.yesReplies.indexOf(sms) > -1) {
             person.assignment.status = 'done';
+            person.assignment.time = moment.default().format('h:mm A');
             await person.assignment.save();
             return Person.getAffirmation();
         } else if (sms == 'snooze') {
