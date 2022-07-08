@@ -65,7 +65,7 @@ class Assignment {
     snooze() {
         return __awaiter(this, void 0, void 0, function* () {
             this.status = 'scheduled';
-            this.time = moment.default().add('1', 'hours').format('h:mm A');
+            this.time = moment.default().add('1', 'minutes').format('h:mm A');
             yield this.save();
             return this.time;
         });

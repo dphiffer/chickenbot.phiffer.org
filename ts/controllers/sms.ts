@@ -7,11 +7,14 @@ import twilio from 'twilio';
 import Sheets from './sheets';
 import Calendar from './calendar';
 import Person from '../models/person';
+import Assignment from '../models/assignment';
 
 class SMS {
 
     private static config: SMSConfig;
     static instance: SMS;
+    static yesReplies = ['y', 'yes', 'yep', 'yeah', 'yea', 'done', 'indeed', 'yessir', 'affirmative'];
+    static noReplies = ['n', 'no', 'nope', 'negative', 'nay', 'no sir', 'none'];
 
     twilio: twilio.Twilio;
     phone: string;
@@ -33,6 +36,10 @@ class SMS {
         return this.instance;
     }
 
+    normalizedBody(msg: IncomingMessage) {
+        return msg.Body.trim().toLocaleLowerCase().replace(/[!.]^/, '');
+    }
+
     async handleMessage(msg: IncomingMessage): Promise<string> {
         let person = await this.validateMessage(msg);
         let rsp = '';
@@ -50,19 +57,42 @@ class SMS {
         return rsp;
     }
 
+    async sendAssignments(due: Assignment[]) {
+        let sheets = await Sheets.getInstance();
+        let people = sheets.getActivePeople();
+        for (let assignment of due) {
+            let [ person ] = people.filter(p => p.name == assignment.person);
+            let [ task ] = sheets.tasks.filter(t => t.name == assignment.task);
+            if (!person || !task) {
+                continue;
+            }
+            this.sendMessage(person, `Hi ${person.name}, ${task.question} [reply Y if you're done or Snooze for more time]`);
+            person.assignment = assignment;
+            person.context = PersonContext.ASSIGNMENT;
+            assignment.status = 'pending';
+            await assignment.save();        
+        }
+    }
+
     async handleAssignmentReply(msg: IncomingMessage, person: Person) {
-        let sms = msg.Body.trim().toLowerCase();
-        if (person.assignment && (sms == 'y' || sms == 'yes')) {
+        let sms = this.normalizedBody(msg);
+        if (!person.assignment) {
+            throw new Error(`${person.name} replied in assignment context without an assignment`);
+        }
+        if (SMS.yesReplies.indexOf(sms) > -1) {
             person.assignment.status = 'done';
             await person.assignment.save();
             return Person.getAffirmation();
+        } else if (sms == 'snooze') {
+            let time = await person.assignment.snooze();
+            return `Great, I'll ask again at ${time}. [reply Y at any time once you're done]`;
         }
         await this.relayToBackup(msg, person);
         return '';
     }
 
     async handleBackupMessages(msg: IncomingMessage, person: Person) {
-        let sms = msg.Body.trim().toLocaleLowerCase();
+        let sms = this.normalizedBody(msg);
         if (sms == 'schedule') {
             await this.scheduleStart();
         }
@@ -74,7 +104,7 @@ class SMS {
         let people = sheets.getActivePeople();
         for (let person of people) {
             person.context = PersonContext.SCHEDULE_START;
-            await this.sendMessage(person, 'It is time to schedule chicken tasks. Are there any days you will be away? [reply Y or N]');
+            await this.sendMessage(person, 'It is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]');
         }
     }
 

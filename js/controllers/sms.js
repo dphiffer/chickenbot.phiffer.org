@@ -34,6 +34,9 @@ class SMS {
         this.instance = new SMS();
         return this.instance;
     }
+    normalizedBody(msg) {
+        return msg.Body.trim().toLocaleLowerCase().replace(/[!.]^/, '');
+    }
     handleMessage(msg) {
         return __awaiter(this, void 0, void 0, function* () {
             let person = yield this.validateMessage(msg);
@@ -56,13 +59,38 @@ class SMS {
             return rsp;
         });
     }
+    sendAssignments(due) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let sheets = yield sheets_1.default.getInstance();
+            let people = sheets.getActivePeople();
+            for (let assignment of due) {
+                let [person] = people.filter(p => p.name == assignment.person);
+                let [task] = sheets.tasks.filter(t => t.name == assignment.task);
+                if (!person || !task) {
+                    continue;
+                }
+                this.sendMessage(person, `Hi ${person.name}, ${task.question} [reply Y if you're done or Snooze for more time]`);
+                person.assignment = assignment;
+                person.context = types_1.PersonContext.ASSIGNMENT;
+                assignment.status = 'pending';
+                yield assignment.save();
+            }
+        });
+    }
     handleAssignmentReply(msg, person) {
         return __awaiter(this, void 0, void 0, function* () {
-            let sms = msg.Body.trim().toLowerCase();
-            if (person.assignment && (sms == 'y' || sms == 'yes')) {
+            let sms = this.normalizedBody(msg);
+            if (!person.assignment) {
+                throw new Error(`${person.name} replied in assignment context without an assignment`);
+            }
+            if (SMS.yesReplies.indexOf(sms) > -1) {
                 person.assignment.status = 'done';
                 yield person.assignment.save();
                 return person_1.default.getAffirmation();
+            }
+            else if (sms == 'snooze') {
+                let time = yield person.assignment.snooze();
+                return `Great, I'll ask again at ${time}. [reply Y at any time once you're done]`;
             }
             yield this.relayToBackup(msg, person);
             return '';
@@ -70,7 +98,7 @@ class SMS {
     }
     handleBackupMessages(msg, person) {
         return __awaiter(this, void 0, void 0, function* () {
-            let sms = msg.Body.trim().toLocaleLowerCase();
+            let sms = this.normalizedBody(msg);
             if (sms == 'schedule') {
                 yield this.scheduleStart();
             }
@@ -83,7 +111,7 @@ class SMS {
             let people = sheets.getActivePeople();
             for (let person of people) {
                 person.context = types_1.PersonContext.SCHEDULE_START;
-                yield this.sendMessage(person, 'It is time to schedule chicken tasks. Are there any days you will be away? [reply Y or N]');
+                yield this.sendMessage(person, 'It is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]');
             }
         });
     }
@@ -193,5 +221,7 @@ class SMS {
         return rsp.toString();
     }
 }
+SMS.yesReplies = ['y', 'yes', 'yep', 'yeah', 'yea', 'done', 'indeed', 'yessir', 'affirmative'];
+SMS.noReplies = ['n', 'no', 'nope', 'negative', 'nay', 'no sir', 'none'];
 exports.default = SMS;
 //# sourceMappingURL=sms.js.map

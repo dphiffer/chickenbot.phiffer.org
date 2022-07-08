@@ -40,6 +40,7 @@ const suntimes = __importStar(require("suntimes"));
 const app_1 = __importDefault(require("../app"));
 const sheets_1 = __importDefault(require("./sheets"));
 const assignment_1 = __importDefault(require("../models/assignment"));
+const sms_1 = __importDefault(require("./sms"));
 class Calendar {
     constructor() {
         this.assignments = [];
@@ -94,6 +95,14 @@ class Calendar {
             let archived = yield this.loadAssignments('Archive');
             app_1.default.log.info(`loaded ${archived.length} archived assignments`);
             this.markTaskDates();
+            app_1.default.log.info('setting up 60 second interval');
+            setInterval(() => __awaiter(this, void 0, void 0, function* () {
+                let due = yield this.checkAssignments();
+                if (due.length > 0) {
+                    let sms = yield sms_1.default.getInstance();
+                    yield sms.sendAssignments(due);
+                }
+            }), 60 * 1000);
             return this;
         });
     }
@@ -311,14 +320,6 @@ class Calendar {
                 let dateTime = moment.default(`${assignment.date} ${assignment.time}`, 'M/D h:mm A');
                 if (dateTime.format('YYYY-MM-DD') == today &&
                     dateTime.format('HH:mm:ss') <= now) {
-                    let [person] = sheets.people.filter(p => p.name == assignment.person);
-                    let [task] = sheets.tasks.filter(t => t.name == assignment.task);
-                    if (!person || !task) {
-                        continue;
-                    }
-                    person.assignment = assignment;
-                    assignment.status = 'pending';
-                    yield assignment.save();
                     assignmentsDue.push(assignment);
                 }
             }

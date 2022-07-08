@@ -1,11 +1,12 @@
 import * as moment from 'moment-timezone';
 import * as suntimes from 'suntimes';
-import { CalendarConfig } from '../types';
+import { CalendarConfig, PersonContext } from '../types';
 import app from '../app';
 import Sheets from './sheets';
 import Person from '../models/person';
 import Task from '../models/task';
 import Assignment from '../models/assignment';
+import SMS from './sms';
 
 class Calendar {
 
@@ -69,6 +70,14 @@ class Calendar {
 		let archived = await this.loadAssignments('Archive');
 		app.log.info(`loaded ${archived.length} archived assignments`);
 		this.markTaskDates();
+		app.log.info('setting up 60 second interval');
+		setInterval(async () => {
+			let due = await this.checkAssignments();
+			if (due.length > 0) {
+				let sms = await SMS.getInstance();
+				await sms.sendAssignments(due);
+			}
+		}, 60 * 1000);
 		return this;
 	}
 
@@ -278,14 +287,6 @@ class Calendar {
 			let dateTime = moment.default(`${assignment.date} ${assignment.time}`, 'M/D h:mm A');
 			if (dateTime.format('YYYY-MM-DD') == today &&
 				dateTime.format('HH:mm:ss') <= now) {
-				let [ person ]  = sheets.people.filter(p => p.name == assignment.person);
-				let [ task ] = sheets.tasks.filter(t => t.name == assignment.task);
-				if (!person || !task) {
-					continue;
-				}
-				person.assignment = assignment;
-				assignment.status = 'pending';
-				await assignment.save();
 				assignmentsDue.push(assignment);
 			}
 		}

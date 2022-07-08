@@ -39,7 +39,7 @@ class Assignment {
 
 	async snooze() {
 		this.status = 'scheduled';
-		this.time = moment.default().add('1', 'hours').format('h:mm A');
+		this.time = moment.default().add('1', 'minutes').format('h:mm A');
 		await this.save();
 		return this.time;
 	}
