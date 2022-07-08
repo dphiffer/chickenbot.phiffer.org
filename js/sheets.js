@@ -87,10 +87,9 @@ class Sheets {
     }
     currentBackup() {
         return __awaiter(this, void 0, void 0, function* () {
-            for (let person of this.people) {
-                if (person.status == 'backup') {
-                    return person;
-                }
+            let [person] = this.people.filter(p => p.status == 'backup');
+            if (person) {
+                return person;
             }
             // Nobody assigned yet, just pick the first person on the list
             let sheet = this.doc.sheetsByTitle['People'];
@@ -98,8 +97,9 @@ class Sheets {
             for (let row of rows) {
                 row.status = 'backup';
                 yield row.save();
-                this.people[row.name].status = 'backup';
-                return this.people[row.name];
+                [person] = this.people.filter(p => p.name == row.name);
+                person.status = 'backup';
+                return person;
             }
         });
     }

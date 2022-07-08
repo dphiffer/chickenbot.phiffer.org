@@ -47,11 +47,20 @@ interface AssignmentUpdate {
     status: string;
 }
 
+enum PersonContext {
+    READY,
+    ASSIGNMENT,
+    SCHEDULE_START,
+    SCHEDULE_AWAY,
+    SCHEDULE_AWAY_TIME
+}
+
 export {
     Config,
     SheetsConfig,
     SMSConfig,
     CalendarConfig,
+    PersonContext,
     IncomingMessage,
     AssignmentUpdate
 };

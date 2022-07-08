@@ -12,9 +12,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const sms_1 = __importDefault(require("./sms"));
+const sms_1 = __importDefault(require("./controllers/sms"));
 const config_1 = __importDefault(require("./config"));
-const sheets_1 = __importDefault(require("./sheets"));
+const sheets_1 = __importDefault(require("./controllers/sheets"));
 function routes(app) {
     return __awaiter(this, void 0, void 0, function* () {
         app.get('/', (request, reply) => {
@@ -23,8 +23,7 @@ function routes(app) {
             };
         });
         app.post('/sms', (request, reply) => __awaiter(this, void 0, void 0, function* () {
-            let sheets = yield sheets_1.default.getInstance(config_1.default.google);
-            let sms = sms_1.default.getInstance(config_1.default.twilio, sheets);
+            let sms = yield sms_1.default.getInstance();
             try {
                 let response = yield sms.handleMessage(request.body);
                 if (response) {
@@ -38,12 +37,16 @@ function routes(app) {
             }
             catch (err) {
                 app.log.error(err);
-                return sms.messageResponse(reply, err.message);
+                let person = yield sms.validateMessage(request.body);
+                if (person) {
+                    sms.relayErrorToBackup(request.body, person, err);
+                }
+                return sms.messageResponse(reply, 'Oops, sorry something went wrong.');
             }
         }));
         app.post('/update', (request, reply) => __awaiter(this, void 0, void 0, function* () {
             try {
-                let sheets = yield sheets_1.default.getInstance(config_1.default.google);
+                let sheets = yield sheets_1.default.getInstance();
                 if (request.body.secret != config_1.default.google.webhookSecret) {
                     throw new Error('Invalid webhook secret.');
                 }

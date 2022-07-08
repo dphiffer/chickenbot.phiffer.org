@@ -36,8 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const moment = __importStar(require("moment-timezone"));
-const config_1 = __importDefault(require("../config"));
-const sheets_1 = __importDefault(require("../sheets"));
+const sheets_1 = __importDefault(require("../controllers/sheets"));
 class Assignment {
     constructor(sheet, data) {
         this.sheet = sheet;
@@ -49,7 +48,7 @@ class Assignment {
     }
     save() {
         return __awaiter(this, void 0, void 0, function* () {
-            let sheets = yield sheets_1.default.getInstance(config_1.default.google);
+            let sheets = yield sheets_1.default.getInstance();
             let sheet = sheets.doc.sheetsByTitle[this.sheet];
             let rows = yield sheet.getRows();
             let id = `${this.date} ${this.task}`;

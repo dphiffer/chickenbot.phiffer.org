@@ -2,7 +2,7 @@ import { GoogleSpreadsheetRow } from 'google-spreadsheet';
 import * as moment from 'moment-timezone';
 import { AssignmentUpdate } from '../types';
 import config from '../config';
-import Sheets from '../sheets';
+import Sheets from '../controllers/sheets';
 
 class Assignment {
 
@@ -23,7 +23,7 @@ class Assignment {
 	}
 
 	async save() {
-		let sheets = await Sheets.getInstance(config.google);
+		let sheets = await Sheets.getInstance();
 		let sheet = sheets.doc.sheetsByTitle[this.sheet];
 		let rows = await sheet.getRows();
 		let id = `${this.date} ${this.task}`;

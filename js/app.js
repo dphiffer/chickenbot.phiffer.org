@@ -16,18 +16,22 @@ const config_1 = __importDefault(require("./config"));
 const fastify_1 = __importDefault(require("fastify"));
 const formbody_1 = __importDefault(require("@fastify/formbody"));
 const routes_1 = __importDefault(require("./routes"));
-const sheets_1 = __importDefault(require("./sheets"));
-const calendar_1 = __importDefault(require("./calendar"));
-const sms_1 = __importDefault(require("./sms"));
+const sheets_1 = __importDefault(require("./controllers/sheets"));
+const calendar_1 = __importDefault(require("./controllers/calendar"));
+const sms_1 = __importDefault(require("./controllers/sms"));
 const app = (0, fastify_1.default)({
     logger: config_1.default.logger
 });
 app.register(formbody_1.default);
 app.register(routes_1.default);
+sheets_1.default.configure(config_1.default.google);
+sms_1.default.configure(config_1.default.twilio);
+calendar_1.default.configure(config_1.default.calendar);
 (() => __awaiter(void 0, void 0, void 0, function* () {
-    let sheets = yield sheets_1.default.getInstance(config_1.default.google);
-    sms_1.default.getInstance(config_1.default.twilio, sheets);
-    calendar_1.default.getInstance(config_1.default.calendar, sheets);
+    let sheets = yield sheets_1.default.getInstance();
+    yield sheets.setup();
+    let calendar = yield calendar_1.default.getInstance();
+    yield calendar.setup();
 }))();
 exports.default = app;
 //# sourceMappingURL=app.js.map

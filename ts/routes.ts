@@ -1,8 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { IncomingMessage, AssignmentUpdate } from './types';
-import SMS from './sms';
+import SMS from './controllers/sms';
 import config from './config';
-import Sheets from './sheets';
+import Sheets from './controllers/sheets';
 
 async function routes(app: FastifyInstance) {
     app.get('/', (request, reply) => {
@@ -12,8 +12,7 @@ async function routes(app: FastifyInstance) {
     });
     
     app.post('/sms', async (request: FastifyRequest<{ Body: IncomingMessage }>, reply: FastifyReply) => {
-        let sheets = await Sheets.getInstance(config.google);
-        let sms = SMS.getInstance(config.twilio, sheets);
+        let sms = await SMS.getInstance();
         try {
             let response = await sms.handleMessage(request.body);
             if (response) {
@@ -25,13 +24,17 @@ async function routes(app: FastifyInstance) {
             }
         } catch (err) {
             app.log.error(err);
-            return sms.messageResponse(reply, (err as Error).message);
+            let person = await sms.validateMessage(request.body);
+            if (person) {
+                sms.relayErrorToBackup(request.body, person, err as Error);
+            }
+            return sms.messageResponse(reply, 'Oops, sorry something went wrong.');
         }
     });
 
     app.post('/update', async (request: FastifyRequest<{ Body: AssignmentUpdate & { secret: string } }>, reply: FastifyReply) => {
         try {
-            let sheets = await Sheets.getInstance(config.google);
+            let sheets = await Sheets.getInstance();
             if (request.body.secret != config.google.webhookSecret) {
                 throw new Error('Invalid webhook secret.');
             }

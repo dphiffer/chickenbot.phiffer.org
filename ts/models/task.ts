@@ -1,5 +1,4 @@
 import { GoogleSpreadsheetRow } from 'google-spreadsheet';
-import Sheets from '../sheets';
 
 class Task {
 

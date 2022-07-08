@@ -17,6 +17,7 @@ const twilio_1 = require("twilio");
 const twilio_2 = __importDefault(require("twilio"));
 const sheets_1 = __importDefault(require("./sheets"));
 const calendar_1 = __importDefault(require("./calendar"));
+const person_1 = __importDefault(require("./models/person"));
 class SMS {
     constructor(config, sheets) {
         this.twilio = (0, twilio_2.default)(config.accountSid, config.authToken);
@@ -34,10 +35,27 @@ class SMS {
         return __awaiter(this, void 0, void 0, function* () {
             let person = this.validateMessage(msg);
             let rsp = '';
+            if (person.context == 'assignment') {
+                rsp = yield this.handleAssignmentPrompt(msg, person);
+            }
+            else if (person.context == 'scheduling') {
+            }
             if (person.status == 'backup') {
                 rsp = yield this.handleBackupMessages(msg, person);
             }
             return rsp;
+        });
+    }
+    handleAssignmentPrompt(msg, person) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let sms = msg.Body.trim().toLowerCase();
+            if (person.assignment && (sms == 'y' || sms == 'yes')) {
+                person.assignment.status = 'done';
+                yield person.assignment.save();
+                return person_1.default.getAffirmation();
+            }
+            yield this.forwardToBackup(msg, person);
+            return '';
         });
     }
     handleBackupMessages(msg, person) {
@@ -50,6 +68,14 @@ class SMS {
                 yield calendar.scheduleTasks();
             }
             return '';
+        });
+    }
+    forwardToBackup(msg, person) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let backup = yield this.sheets.currentBackup();
+            if (backup) {
+                yield this.sendMessage(`${person.name}: ${msg.Body}`, backup);
+            }
         });
     }
     validateMessage(msg) {

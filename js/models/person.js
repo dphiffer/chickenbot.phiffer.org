@@ -12,12 +12,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const types_1 = require("../types");
 const moment_timezone_1 = __importDefault(require("moment-timezone"));
+const sheets_1 = __importDefault(require("../controllers/sheets"));
 class Person {
     constructor(sheets, row) {
         this.schedule = null;
         this.assignment = null;
-        this.sheets = sheets;
+        this.context = types_1.PersonContext.READY;
         this.name = row.name;
         this.phone = this.normalizePhone(row.phone);
         this.status = row.status;
@@ -44,8 +46,9 @@ class Person {
     }
     updateStatus(status) {
         return __awaiter(this, void 0, void 0, function* () {
+            let sheets = yield sheets_1.default.getInstance();
             this.status = status;
-            let sheet = this.sheets.doc.sheetsByTitle['People'];
+            let sheet = sheets.doc.sheetsByTitle['People'];
             let rows = yield sheet.getRows();
             for (let row of rows) {
                 if (row.name == this.name) {
@@ -59,11 +62,12 @@ class Person {
     }
     updateAway(awayDays) {
         return __awaiter(this, void 0, void 0, function* () {
+            let sheets = yield sheets_1.default.getInstance();
             awayDays = awayDays.filter(date => {
                 return date >= (0, moment_timezone_1.default)().format('YYYY-MM-DD');
             });
             this.away = awayDays.join(', ');
-            let sheet = this.sheets.doc.sheetsByTitle['People'];
+            let sheet = sheets.doc.sheetsByTitle['People'];
             let rows = yield sheet.getRows();
             for (let row of rows) {
                 if (row.name == this.name) {

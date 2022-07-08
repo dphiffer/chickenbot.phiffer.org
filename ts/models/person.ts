@@ -1,20 +1,20 @@
 import { GoogleSpreadsheetRow } from 'google-spreadsheet';
+import { PersonContext } from '../types';
 import moment from 'moment-timezone';
-import Sheets from '../sheets';
+import Sheets from '../controllers/sheets';
 import Assignment from './assignment';
 
 class Person {
 
-	sheets: Sheets;
 	name: string;
 	phone: string;
 	status: string;
 	away: string;
 	schedule: null | string = null;
 	assignment: null | Assignment = null;
+	context: PersonContext = PersonContext.READY;
 
 	constructor(sheets: Sheets, row: GoogleSpreadsheetRow) {
-		this.sheets = sheets;
 		this.name = row.name;
 		this.phone = this.normalizePhone(row.phone);
 		this.status = row.status;
@@ -43,8 +43,9 @@ class Person {
 	}
 
 	async updateStatus(status: string) {
+		let sheets = await Sheets.getInstance();
 		this.status = status;
-		let sheet = this.sheets.doc.sheetsByTitle['People'];
+		let sheet = sheets.doc.sheetsByTitle['People'];
 		let rows = await sheet.getRows();
 		for (let row of rows) {
 			if (row.name == this.name) {
@@ -57,11 +58,12 @@ class Person {
 	}
 
 	async updateAway(awayDays: string[]) {
+		let sheets = await Sheets.getInstance();
 		awayDays = awayDays.filter(date => {
 			return date >= moment().format('YYYY-MM-DD');
 		});
 		this.away = awayDays.join(', ');
-		let sheet = this.sheets.doc.sheetsByTitle['People'];
+		let sheet = sheets.doc.sheetsByTitle['People'];
 		let rows = await sheet.getRows();
 		for (let row of rows) {
 			if (row.name == this.name) {
