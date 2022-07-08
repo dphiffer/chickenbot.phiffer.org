@@ -75,7 +75,7 @@ class SMS {
                 rsp = yield this.handleScheduleAwayReply(msg, person);
             }
             else if (person.status == 'backup') {
-                rsp = yield this.handleBackupMessages(msg, person);
+                rsp = yield this.handleBackupMessage(msg);
             }
             else {
                 yield this.relayToBackup(msg, person);
@@ -121,13 +121,22 @@ class SMS {
             return '';
         });
     }
-    handleBackupMessages(msg, person) {
+    handleBackupMessage(msg) {
         return __awaiter(this, void 0, void 0, function* () {
             let sms = this.normalizedBody(msg);
+            let namesRegex = yield this.getNamesRegex();
+            let announceRegex = this.getAnnounceRegex();
+            let rsp = '';
             if (sms == 'schedule') {
                 yield this.scheduleStart();
             }
-            return '';
+            else if (sms.match(namesRegex)) {
+                yield this.relayToPerson(msg);
+            }
+            else if (sms.match(announceRegex)) {
+                rsp = yield this.sendAnnouncement(msg);
+            }
+            return rsp;
         });
     }
     scheduleStart() {
@@ -202,6 +211,25 @@ class SMS {
             }
         });
     }
+    sendAnnouncement(msg) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let sheets = yield sheets_1.default.getInstance();
+            let people = sheets.getActivePeople();
+            let match = msg.Body.match(this.getAnnounceRegex());
+            if (!match) {
+                throw new Error('Could not match announce regex');
+            }
+            let body = match[1];
+            let count = 0;
+            for (let person of people) {
+                if (person.status != 'backup') {
+                    yield this.sendMessage(person, body);
+                    count++;
+                }
+            }
+            return `Sent announcement to ${count} people.`;
+        });
+    }
     relayToBackup(msg, person) {
         return __awaiter(this, void 0, void 0, function* () {
             let sheets = yield sheets_1.default.getInstance();
@@ -215,6 +243,23 @@ class SMS {
         return __awaiter(this, void 0, void 0, function* () {
             msg.Body = `${person.name}: ${msg.Body}\n${error.message}`;
             yield this.relayToBackup(msg, person);
+        });
+    }
+    relayToPerson(msg) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let sheets = yield sheets_1.default.getInstance();
+            let namesRegex = yield this.getNamesRegex();
+            let match = msg.Body.match(namesRegex);
+            if (!match) {
+                throw new Error('Could not match reply regex');
+            }
+            let name = match[1];
+            let body = match[2];
+            let [relayTo] = sheets.people.filter(p => p.name == name);
+            if (!relayTo) {
+                throw new Error('Could not find person to relay message to');
+            }
+            yield this.sendMessage(relayTo, body);
         });
     }
     validateMessage(msg) {
@@ -244,6 +289,16 @@ class SMS {
         rsp.message(response);
         reply.header('Content-Type', 'text/xml');
         return rsp.toString();
+    }
+    getNamesRegex() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let sheets = yield sheets_1.default.getInstance();
+            let names = sheets.getActivePeople().map(p => p.name);
+            return new RegExp(`^(${names.join('|')}):\s*(.+)$`, 'msi');
+        });
+    }
+    getAnnounceRegex() {
+        return /announce:\s*(.+)$/msi;
     }
 }
 SMS.yesReplies = ['y', 'yes', 'yep', 'yeah', 'yea', 'done', 'indeed', 'yessir', 'affirmative'];

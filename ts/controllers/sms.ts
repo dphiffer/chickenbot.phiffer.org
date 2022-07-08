@@ -51,7 +51,7 @@ class SMS {
         } else if (person.context == PersonContext.SCHEDULE_AWAY) {
             rsp = await this.handleScheduleAwayReply(msg, person);
         } else if (person.status == 'backup') {
-            rsp = await this.handleBackupMessages(msg, person);
+            rsp = await this.handleBackupMessage(msg);
         } else {
             await this.relayToBackup(msg, person);
         }
@@ -93,12 +93,19 @@ class SMS {
         return '';
     }
 
-    async handleBackupMessages(msg: IncomingMessage, person: Person) {
+    async handleBackupMessage(msg: IncomingMessage) {
         let sms = this.normalizedBody(msg);
+        let namesRegex = await this.getNamesRegex();
+        let announceRegex = this.getAnnounceRegex();
+        let rsp = '';
         if (sms == 'schedule') {
             await this.scheduleStart();
+        } else if (sms.match(namesRegex)) {
+            await this.relayToPerson(msg);
+        } else if (sms.match(announceRegex)) {
+            rsp = await this.sendAnnouncement(msg);
         }
-        return '';
+        return rsp;
     }
 
     async scheduleStart() {
@@ -167,6 +174,24 @@ class SMS {
         }
     }
 
+    async sendAnnouncement(msg: IncomingMessage) {
+        let sheets = await Sheets.getInstance();
+        let people = sheets.getActivePeople();
+        let match = msg.Body.match(this.getAnnounceRegex());
+        if (!match) {
+            throw new Error('Could not match announce regex');
+        }
+        let body = match[1];
+        let count = 0;
+        for (let person of people) {
+            if (person.status != 'backup') {
+                await this.sendMessage(person, body);
+                count++;
+            }
+        }
+        return `Sent announcement to ${count} people.`;
+    }
+
     async relayToBackup(msg: IncomingMessage, person: Person) {
         let sheets = await Sheets.getInstance();
         let backup = await sheets.currentBackup();
@@ -178,6 +203,22 @@ class SMS {
     async relayErrorToBackup(msg: IncomingMessage, person: Person, error: Error) {
         msg.Body = `${person.name}: ${msg.Body}\n${error.message}`;
         await this.relayToBackup(msg, person);
+    }
+
+    async relayToPerson(msg: IncomingMessage) {
+        let sheets = await Sheets.getInstance();
+        let namesRegex = await this.getNamesRegex();
+        let match = msg.Body.match(namesRegex);
+        if (!match) {
+            throw new Error('Could not match reply regex');
+        }
+        let name = match[1];
+        let body = match[2];
+        let [ relayTo ] = sheets.people.filter(p => p.name == name);
+        if (!relayTo) {
+            throw new Error('Could not find person to relay message to');
+        }
+        await this.sendMessage(relayTo, body);
     }
 
     async validateMessage(msg: IncomingMessage) {
@@ -205,6 +246,16 @@ class SMS {
         rsp.message(response);
         reply.header('Content-Type', 'text/xml');
         return rsp.toString();
+    }
+
+    async getNamesRegex() {
+        let sheets = await Sheets.getInstance();
+        let names = sheets.getActivePeople().map(p => p.name);
+        return new RegExp(`^(${names.join('|')}):\s*(.+)$`, 'msi');
+    }
+
+    getAnnounceRegex() {
+        return /announce:\s*(.+)$/msi;
     }
 }
 
