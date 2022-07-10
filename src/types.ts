@@ -40,6 +40,7 @@ interface IncomingMessage {
 }
 
 interface AssignmentUpdate {
+    secret?: string;
     date: string;
     time: string;
     task: string;

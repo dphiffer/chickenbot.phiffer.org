@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const config_1 = __importDefault(require("../config"));
 const app_1 = __importDefault(require("../app"));
 const types_1 = require("../types");
 const twilio_1 = require("twilio");
@@ -207,7 +206,7 @@ class SMS {
     }
     async validateMessage(msg) {
         let sheets = await sheets_1.default.getInstance();
-        if (msg.AccountSid !== config_1.default.twilio.accountSid) {
+        if (msg.AccountSid !== SMS.config.accountSid) {
             throw new Error('Whoops, Twilio needs to be configured.');
         }
         let [person] = sheets.people.filter(p => msg.From == p.phone);

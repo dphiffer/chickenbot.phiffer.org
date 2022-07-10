@@ -58,6 +58,7 @@ class Sheets {
         return this.tasks;
     }
     async updateAssignment(data) {
+        this.validateSecret(data);
         let calendar = await calendar_1.default.getInstance();
         let assignment = calendar.getAssignment(data.date, data.task);
         if (!assignment) {
@@ -68,6 +69,9 @@ class Sheets {
         assignment.status = data.status;
         app_1.default.log.info(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
         return assignment;
+    }
+    validateSecret(data) {
+        return (data.secret && Sheets.config.webhookSecret == data.secret);
     }
     getActivePeople() {
         return this.people.filter(p => (p.status == 'active' || p.status == 'backup'));

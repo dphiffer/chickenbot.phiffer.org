@@ -1,4 +1,3 @@
-import config from '../config';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { SheetsConfig, AssignmentUpdate } from '../types';
 import { readFileSync } from 'fs';
@@ -70,6 +69,7 @@ class Sheets {
     }
 
     async updateAssignment(data: AssignmentUpdate) {
+        this.validateSecret(data);
         let calendar = await Calendar.getInstance();
         let assignment = calendar.getAssignment(data.date, data.task);
         if (! assignment) {
@@ -80,6 +80,10 @@ class Sheets {
         assignment.status = data.status;
         app.log.info(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
         return assignment;
+    }
+
+    validateSecret(data: AssignmentUpdate) {
+        return (data.secret && Sheets.config.webhookSecret == data.secret);
     }
 
     getActivePeople() {

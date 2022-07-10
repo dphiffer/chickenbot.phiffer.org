@@ -1,4 +1,3 @@
-import config from '../config';
 import app from '../app';
 
 import { FastifyReply } from 'fastify';
@@ -224,7 +223,7 @@ class SMS {
 
     async validateMessage(msg: IncomingMessage) {
         let sheets = await Sheets.getInstance();
-        if (msg.AccountSid !== config.twilio.accountSid) {
+        if (msg.AccountSid !== SMS.config.accountSid) {
             throw new Error('Whoops, Twilio needs to be configured.');
         }
         let [ person ] = sheets.people.filter(p => msg.From == p.phone);

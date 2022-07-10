@@ -1,11 +1,14 @@
-import config from './config';
+import fs from 'fs';
+import path from 'path';
 import Fastify from 'fastify';
 import formBodyPlugin from '@fastify/formbody';
-import moment from 'moment-timezone';
 import routes from './routes';
 import Sheets from './controllers/sheets';
 import Calendar from './controllers/calendar';
 import SMS from './controllers/sms';
+
+const configPath = `${path.dirname(__dirname)}/config/config.json`;
+const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
 const app = Fastify({
     logger: config.logger

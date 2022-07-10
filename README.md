@@ -53,7 +53,7 @@ Add the names and phone numbers for people who will be caring for the chickens.
 
 ## Configuration
 
-1. Copy `ts/config.ts.example` to `ts/config.ts`
+1. Copy `config/config.json.example` to `config/config.json`
 2. Set `url` to the public facing server URL for chickenbot.
 3. Set the `timezone` and `latitude`/`longitude` coordinates (used for calculating sunset times). You can find coordinate values in the URL from [Google Maps](https://maps.google.com/).
 4. Set `chickenbotPhone` as the phone number for the bot (from Twilio)
@@ -67,12 +67,6 @@ Add the names and phone numbers for people who will be caring for the chickens.
 npm install
 ```
 
-## Compile TypeScript
-
-```
-npm run build
-```
-
 ## Run the server
 
 ```
@@ -81,15 +75,15 @@ npm start
 
 ## Setup Twilio webhook
 
-Configure the phone number to send webhook requests to the chickenbot server for incoming SMS messages. The URL should be something like `https://chickenbot.example.com/message`.
+Configure the phone number to send webhook requests to the chickenbot server for incoming SMS messages. The URL should include a fully qualified domain followed by `/sms`, something like `https://chickenbot.example.com/sms`.
 
 ## Setup Google webhook
 
-1. From the Google Sheet, go to the menu Extensions > Apps Script
+1. From the Google Sheet, go to the menu Extensions → Apps Script
 2. Paste the code from the file `webhook.gs`
-3. Replace the `url` and `secret` variables with your own values
+3. Replace the `url` and `secret` variables with your own values (e.g., `https://chickenbot.example.com/update`)
 4. Configure `sendWebhook` from the `Head` deployment `from Spreadsheet` to run `on edit`
-5. You will need to click through a scary looking "app security warning" to grant access to your spreadsheets (advanced -> open unsafe app)
+5. You will need to click through a scary looking "app security warning" to grant access to your spreadsheets (advanced → open unsafe app)
 
 ## Designated backup commands
 
@@ -97,5 +91,4 @@ From the designated backup phone:
 
 * Send a `schedule` SMS to the chickenbot phone number to schedule tasks for the coming week
 * Send `announce: [message]` to relay a message to everyone
-* Send `[name]: [message]` to relay a message to a particular person by name (subsequent messages will send to that same person, no need to add `[name]:`)
-* Send `backup: [name]` to assign the backup role to another person
+* Send `[name]: [message]` to relay a message to a particular person by name

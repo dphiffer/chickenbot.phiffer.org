@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const sms_1 = __importDefault(require("./controllers/sms"));
-const config_1 = __importDefault(require("./config"));
 const sheets_1 = __importDefault(require("./controllers/sheets"));
 async function routes(app) {
     app.post('/sms', async (request, reply) => {
@@ -32,9 +31,6 @@ async function routes(app) {
     app.post('/update', async (request, reply) => {
         try {
             let sheets = await sheets_1.default.getInstance();
-            if (request.body.secret != config_1.default.google.webhookSecret) {
-                throw new Error('Invalid webhook secret.');
-            }
             let assignment = await sheets.updateAssignment(request.body);
             return {
                 assignment: assignment

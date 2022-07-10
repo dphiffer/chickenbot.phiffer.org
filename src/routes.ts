@@ -1,7 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { IncomingMessage, AssignmentUpdate } from './types';
 import SMS from './controllers/sms';
-import config from './config';
 import Sheets from './controllers/sheets';
 
 async function routes(app: FastifyInstance) {
@@ -30,9 +29,6 @@ async function routes(app: FastifyInstance) {
     app.post('/update', async (request: FastifyRequest<{ Body: AssignmentUpdate & { secret: string } }>, reply: FastifyReply) => {
         try {
             let sheets = await Sheets.getInstance();
-            if (request.body.secret != config.google.webhookSecret) {
-                throw new Error('Invalid webhook secret.');
-            }
             let assignment = await sheets.updateAssignment(request.body);
             return {
                 assignment: assignment
