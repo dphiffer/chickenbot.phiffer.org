@@ -22,42 +22,35 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const moment = __importStar(require("moment-timezone"));
 const suntimes = __importStar(require("suntimes"));
-const assignment_1 = __importDefault(require("./models/assignment"));
+const app_1 = __importDefault(require("../app"));
+const sheets_1 = __importDefault(require("./sheets"));
+const assignment_1 = __importDefault(require("../models/assignment"));
+const sms_1 = __importDefault(require("./sms"));
 class Calendar {
-    constructor(config, sheets) {
+    constructor() {
         this.assignments = [];
         this.queue = [];
         this.index = 0;
-        this.sheets = sheets;
-        this.timezone = config.timezone;
-        this.latitude = config.latitude;
-        this.longitude = config.longitude;
-        moment.tz.setDefault(config.timezone);
+        this.timezone = Calendar.config.timezone;
+        this.latitude = Calendar.config.latitude;
+        this.longitude = Calendar.config.longitude;
+        moment.tz.setDefault(Calendar.config.timezone);
     }
-    static getInstance(config, sheets) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this.instance) {
-                return this.instance;
-            }
-            this.instance = new Calendar(config, sheets);
-            yield this.instance.setup();
+    static configure(config) {
+        this.config = config;
+    }
+    static async getInstance() {
+        if (this.instance) {
             return this.instance;
-        });
+        }
+        this.instance = new Calendar();
+        return this.instance;
     }
     static parseDay(input) {
         let today = moment.default().format('YYYY-MM-DD');
@@ -84,22 +77,29 @@ class Calendar {
         }
         return false;
     }
-    setup() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.addAssignments('Upcoming');
-            yield this.addAssignments('Archive');
-            this.markTaskDates();
-            return this;
-        });
+    async setup() {
+        let upcoming = await this.loadAssignments('Upcoming');
+        app_1.default.log.info(`Loaded ${upcoming.length} upcoming assignments`);
+        let archived = await this.loadAssignments('Archive');
+        app_1.default.log.info(`Loaded ${archived.length} archived assignments`);
+        this.markTaskDates();
+        app_1.default.log.info('Setting up assignment check interval');
+        setInterval(async () => {
+            await this.checkAssignments();
+        }, 60 * 1000);
+        await this.checkAssignments();
+        return this;
     }
-    addAssignments(sheetTitle) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let sheet = this.sheets.doc.sheetsByTitle[sheetTitle];
-            let rows = yield sheet.getRows();
-            for (let row of rows) {
-                this.addAssignment(sheetTitle, row);
-            }
-        });
+    async loadAssignments(sheetTitle) {
+        let loaded = [];
+        let sheets = await sheets_1.default.getInstance();
+        let sheet = sheets.doc.sheetsByTitle[sheetTitle];
+        let rows = await sheet.getRows();
+        for (let row of rows) {
+            let assignment = this.addAssignment(sheetTitle, row);
+            loaded.push(assignment);
+        }
+        return loaded;
     }
     addAssignment(sheet, row) {
         let assignment = new assignment_1.default(sheet, row);
@@ -113,30 +113,30 @@ class Calendar {
             }
         }
     }
-    scheduleTasks() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.sheets.loadPeople();
-            yield this.sheets.loadTasks();
-            this.setupQueue();
-            this.markTaskDates();
-            yield this.archiveCompleted();
-            let assignments = this.scheduleForWeek();
-            yield this.addUpcoming(assignments);
-            return this.setAssigned(assignments);
-        });
+    async scheduleTasks() {
+        let sheets = await sheets_1.default.getInstance();
+        await sheets.loadPeople();
+        await sheets.loadTasks();
+        await this.setupQueue();
+        await this.markTaskDates();
+        await this.archiveCompleted();
+        let assignments = await this.scheduleForWeek();
+        await this.addUpcoming(assignments);
+        await this.setAssigned(assignments);
     }
-    setupQueue() {
-        let people = this.sheets.getActivePeople();
+    async setupQueue() {
+        let sheets = await sheets_1.default.getInstance();
+        let people = sheets.getActivePeople();
         this.queue = people.map(p => p.name);
         this.queue.sort(() => Math.random() - 0.5);
         this.index = 0;
     }
-    markTaskDates() {
-        let tasks = this.sheets.tasks;
+    async markTaskDates() {
+        let sheets = await sheets_1.default.getInstance();
         let fmt = 'YYYY-MM-DD';
         for (let assignment of this.assignments) {
             let date = moment.default(assignment.date, 'M/D');
-            let [task] = tasks.filter(t => t.name == assignment.task);
+            let [task] = sheets.tasks.filter(t => t.name == assignment.task);
             if (task && (!task.lastRun || task.lastRun < date.format(fmt))) {
                 task.lastRun = date.format(fmt);
                 task.lastPerson = assignment.person;
@@ -144,7 +144,7 @@ class Calendar {
             }
         }
         let today = moment.default().format(fmt);
-        for (let task of tasks) {
+        for (let task of sheets.tasks) {
             if (!task.lastRun) {
                 task.lastRun = moment.default().format(fmt);
                 task.nextRun = moment.default().add(task.frequency, 'days').format(fmt);
@@ -156,24 +156,25 @@ class Calendar {
             task.nextRun = nextRun.format(fmt);
         }
     }
-    scheduleForWeek() {
+    async scheduleForWeek() {
         let now = moment.default();
         let assignments = [];
         for (let i = 0; i < 7; i++) {
             let date = now.add(1, 'days');
-            let scheduled = this.scheduleForDate(date);
+            let scheduled = await this.scheduleForDate(date);
             assignments = [...assignments, ...scheduled];
         }
         return assignments;
     }
-    scheduleForDate(date) {
-        let people = this.sheets.getActivePeople();
+    async scheduleForDate(date) {
+        let sheets = await sheets_1.default.getInstance();
+        let people = sheets.getActivePeople();
         let iso8601 = 'YYYY-MM-DD';
         let locale = 'M/D';
         let assignments = [];
-        for (let task of this.sheets.tasks) {
+        for (let task of sheets.tasks) {
             if (task.nextRun && task.nextRun <= date.format(iso8601)) {
-                let person = this.selectPerson(task, people, date.format(iso8601));
+                let person = await this.selectPerson(task, people, date.format(iso8601));
                 let assignment = this.addAssignment('Upcoming', new assignment_1.default('Upcoming', {
                     date: date.format(locale),
                     time: this.getScheduleTime(task.time, date),
@@ -187,18 +188,25 @@ class Calendar {
         this.markTaskDates();
         return assignments;
     }
-    selectPerson(task, people, date) {
+    async selectPerson(task, people, date, iterations = 0) {
         let name = this.queue[this.index];
-        this.index++;
-        if (this.index == this.queue.length) {
-            this.index = 0;
-        }
+        this.index = (this.index + 1) % this.queue.length;
         let [person] = people.filter(p => p.name == name);
-        if (name == task.lastPerson) {
-            return this.selectPerson(task, people, date);
+        if (iterations == people.length) {
+            let sheets = await sheets_1.default.getInstance();
+            let backup = await sheets.currentBackup();
+            if (backup) {
+                person = backup;
+            }
+            else {
+                throw new Error('Not enough people to complete the schedule');
+            }
+        }
+        else if (name == task.lastPerson) {
+            person = await this.selectPerson(task, people, date, iterations + 1);
         }
         else if (person.isAway(date)) {
-            return this.selectPerson(task, people, date);
+            person = await this.selectPerson(task, people, date, iterations + 1);
         }
         return person;
     }
@@ -212,46 +220,45 @@ class Calendar {
             return time;
         }
     }
-    archiveCompleted() {
-        return __awaiter(this, void 0, void 0, function* () {
-            let upcoming = this.sheets.doc.sheetsByTitle['Upcoming'];
-            let archive = this.sheets.doc.sheetsByTitle['Archive'];
-            let today = moment.default().format('M/D');
-            let rows = yield upcoming.getRows();
-            let pending = [];
-            for (let row of rows) {
-                let assignment = {
-                    date: row.date,
-                    time: row.time,
-                    task: row.task,
-                    person: row.person,
-                    status: row.status
-                };
-                yield archive.addRow(assignment);
-                if (assignment.status != 'complete') {
-                    pending.push(assignment);
-                }
+    async archiveCompleted() {
+        let sheets = await sheets_1.default.getInstance();
+        let upcoming = sheets.doc.sheetsByTitle['Upcoming'];
+        let archive = sheets.doc.sheetsByTitle['Archive'];
+        let today = moment.default().format('M/D');
+        let rows = await upcoming.getRows();
+        let pending = [];
+        for (let row of rows) {
+            let assignment = {
+                date: row.date,
+                time: row.time,
+                task: row.task,
+                person: row.person,
+                status: row.status
+            };
+            await archive.addRow(assignment);
+            if (assignment.status != 'complete') {
+                pending.push(assignment);
             }
-            yield upcoming.clearRows();
-            yield upcoming.addRows(pending);
-        });
+        }
+        await upcoming.clearRows();
+        await upcoming.addRows(pending);
     }
-    addUpcoming(assignments) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let sheet = this.sheets.doc.sheetsByTitle['Upcoming'];
-            for (let assignment of assignments) {
-                yield sheet.addRow({
-                    date: assignment.date,
-                    time: assignment.time,
-                    task: assignment.task,
-                    person: assignment.person,
-                    status: assignment.status
-                });
-            }
-        });
+    async addUpcoming(assignments) {
+        let sheets = await sheets_1.default.getInstance();
+        let sheet = sheets.doc.sheetsByTitle['Upcoming'];
+        for (let assignment of assignments) {
+            await sheet.addRow({
+                date: assignment.date,
+                time: assignment.time,
+                task: assignment.task,
+                person: assignment.person,
+                status: assignment.status
+            });
+        }
     }
-    setAssigned(assignments) {
-        let people = this.sheets.getActivePeople();
+    async setAssigned(assignments) {
+        let sheets = await sheets_1.default.getInstance();
+        let people = sheets.getActivePeople();
         for (let person of people) {
             let assigned = [];
             for (let assignment of assignments) {
@@ -264,31 +271,27 @@ class Calendar {
         }
         return people;
     }
-    checkAssignments() {
-        return __awaiter(this, void 0, void 0, function* () {
-            let assignmentsDue = [];
-            let today = moment.default().format('YYYY-MM-DD');
-            let now = moment.default().format('HH:mm:ss');
-            for (let assignment of this.assignments) {
-                if (assignment.status != 'scheduled') {
-                    continue;
-                }
-                let dateTime = moment.default(`${assignment.date} ${assignment.time}`, 'M/D h:mm A');
-                if (dateTime.format('YYYY-MM-DD') == today &&
-                    dateTime.format('HH:mm:ss') <= now) {
-                    let [person] = this.sheets.people.filter(p => p.name == assignment.person);
-                    let [task] = this.sheets.tasks.filter(t => t.name == assignment.task);
-                    if (!person || !task) {
-                        continue;
-                    }
-                    person.assignment = assignment;
-                    assignment.status = 'pending';
-                    yield assignment.save();
-                    assignmentsDue.push(assignment);
-                }
+    async checkAssignments() {
+        app_1.default.log.info('Checking assignments');
+        let sheets = await sheets_1.default.getInstance();
+        let assignmentsDue = [];
+        let today = moment.default().format('YYYY-MM-DD');
+        let now = moment.default().format('HH:mm:ss');
+        for (let assignment of this.assignments) {
+            if (assignment.status != 'scheduled') {
+                continue;
             }
-            return assignmentsDue;
-        });
+            let dateTime = moment.default(`${assignment.date} ${assignment.time}`, 'M/D h:mm A');
+            if (dateTime.format('YYYY-MM-DD') == today &&
+                dateTime.format('HH:mm:ss') <= now) {
+                assignmentsDue.push(assignment);
+                app_1.default.log.info(`due: ${assignment.task.toLowerCase()}`);
+            }
+        }
+        if (assignmentsDue.length > 0) {
+            let sms = sms_1.default.getInstance();
+            await sms.sendAssignments(assignmentsDue);
+        }
     }
 }
 exports.default = Calendar;

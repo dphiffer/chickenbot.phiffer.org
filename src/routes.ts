@@ -5,12 +5,6 @@ import config from './config';
 import Sheets from './controllers/sheets';
 
 async function routes(app: FastifyInstance) {
-    app.get('/', (request, reply) => {
-        return {
-            chickenbot: '🐔'
-        };
-    });
-    
     app.post('/sms', async (request: FastifyRequest<{ Body: IncomingMessage }>, reply: FastifyReply) => {
         let sms, person;
         let rsp = '';

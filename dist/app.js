@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -27,11 +18,11 @@ app.register(routes_1.default);
 sheets_1.default.configure(config_1.default.google);
 sms_1.default.configure(config_1.default.twilio);
 calendar_1.default.configure(config_1.default.calendar);
-(() => __awaiter(void 0, void 0, void 0, function* () {
-    let sheets = yield sheets_1.default.getInstance();
-    yield sheets.setup();
-    let calendar = yield calendar_1.default.getInstance();
-    yield calendar.setup();
-}))();
+(async () => {
+    let sheets = await sheets_1.default.getInstance();
+    await sheets.setup();
+    let calendar = await calendar_1.default.getInstance();
+    await calendar.setup();
+})();
 exports.default = app;
 //# sourceMappingURL=app.js.map
