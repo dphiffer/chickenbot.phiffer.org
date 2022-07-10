@@ -1,9 +1,27 @@
+import moment from 'moment';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { IncomingMessage, AssignmentUpdate } from './types';
 import SMS from './controllers/sms';
 import Sheets from './controllers/sheets';
+import Calendar from './controllers/calendar';
 
 async function routes(app: FastifyInstance) {
+
+    app.get('/', async (_, reply: FastifyReply) => {
+        let calendar = await Calendar.getInstance();
+        let sheets = await Sheets.getInstance();
+        let sms = SMS.getInstance();
+        let backup = await sheets.currentBackup();
+        let backupName = backup ? backup.name : 'Unknown';
+        return reply.view('index.ejs', {
+            phone: sms.displayPhone(sms.phone),
+            spreadsheet_url: `https://docs.google.com/spreadsheets/d/${sheets.id}/edit`,
+            assignments: calendar.assignments,
+            backup: backupName,
+            today: moment().format('YYYY-MM-DD')
+        });
+    });
+
     app.post('/sms', async (request: FastifyRequest<{ Body: IncomingMessage }>, reply: FastifyReply) => {
         let sms, person;
         let rsp = '';

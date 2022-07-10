@@ -37,6 +37,13 @@ class SMS {
         return this.instance;
     }
 
+    displayPhone(phone: string) {
+        let area = phone.substring(2, 5);
+        let prefix = phone.substring(5, 8);
+        let postfix = phone.substring(8, 12);
+        return `(${area}) ${prefix}-${postfix}`;
+    }
+
     normalizedBody(msg: IncomingMessage) {
         return msg.Body.trim().toLocaleLowerCase().replace(/[!.]^/, '');
     }

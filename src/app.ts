@@ -1,7 +1,11 @@
 import fs from 'fs';
 import path from 'path';
+
 import Fastify from 'fastify';
+import pointOfView from '@fastify/view';
 import formBodyPlugin from '@fastify/formbody';
+import fastifyStatic from '@fastify/static';
+
 import routes from './routes';
 import Sheets from './controllers/sheets';
 import Calendar from './controllers/calendar';
@@ -14,6 +18,19 @@ const app = Fastify({
     logger: config.logger
 });
 app.register(formBodyPlugin);
+app.register(pointOfView, {
+    engine: {
+        ejs: require('ejs')
+    },
+    root: path.join(path.dirname(__dirname), 'views'),
+    layout: 'layout.ejs',
+    defaultContext: {
+        url: config.url
+    }
+});
+app.register(fastifyStatic, {
+    root: path.join(path.dirname(__dirname), 'public')
+});
 app.register(routes);
 
 Sheets.configure(config.google);

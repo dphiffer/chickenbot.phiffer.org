@@ -34,6 +34,10 @@ class Sheets {
         return this.instance;
     }
 
+    get id() {
+        return Sheets.config.spreadsheetId;
+    }
+
     async setup() {
         let credsJson = readFileSync(Sheets.config.credentials, 'utf-8');
         let creds = JSON.parse(credsJson);

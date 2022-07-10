@@ -8,6 +8,5 @@ const path_1 = __importDefault(require("path"));
 const app_1 = __importDefault(require("./app"));
 const configPath = `${path_1.default.dirname(__dirname)}/config/config.json`;
 const config = JSON.parse(fs_1.default.readFileSync(configPath, 'utf8'));
-console.log(configPath, config);
 app_1.default.listen(config.server);
 //# sourceMappingURL=server.js.map
