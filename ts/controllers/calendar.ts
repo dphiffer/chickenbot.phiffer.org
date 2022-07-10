@@ -66,18 +66,15 @@ class Calendar {
 
 	async setup() {
 		let upcoming = await this.loadAssignments('Upcoming');
-		app.log.info(`loaded ${upcoming.length} upcoming assignments`);
+		app.log.info(`Loaded ${upcoming.length} upcoming assignments`);
 		let archived = await this.loadAssignments('Archive');
-		app.log.info(`loaded ${archived.length} archived assignments`);
+		app.log.info(`Loaded ${archived.length} archived assignments`);
 		this.markTaskDates();
-		app.log.info('setting up 60 second interval');
+		app.log.info('Setting up assignment check interval');
 		setInterval(async () => {
-			let due = await this.checkAssignments();
-			if (due.length > 0) {
-				let sms = await SMS.getInstance();
-				await sms.sendAssignments(due);
-			}
+			await this.checkAssignments();
 		}, 60 * 1000);
+		await this.checkAssignments();
 		return this;
 	}
 
@@ -276,6 +273,7 @@ class Calendar {
 	}
 
 	async checkAssignments() {
+		app.log.info('Checking assignments');
 		let sheets = await Sheets.getInstance();
 		let assignmentsDue = [];
 		let today = moment.default().format('YYYY-MM-DD');
@@ -288,9 +286,13 @@ class Calendar {
 			if (dateTime.format('YYYY-MM-DD') == today &&
 				dateTime.format('HH:mm:ss') <= now) {
 				assignmentsDue.push(assignment);
+				app.log.info(`due: ${assignment.task.toLowerCase()}`);
 			}
 		}
-		return assignmentsDue;
+		if (assignmentsDue.length > 0) {
+			let sms = SMS.getInstance();
+			await sms.sendAssignments(assignmentsDue);
+		}
 	}
 }
 

@@ -51,8 +51,7 @@ enum PersonContext {
     READY,
     ASSIGNMENT,
     SCHEDULE_START,
-    SCHEDULE_AWAY,
-    SCHEDULE_AWAY_TIME
+    SCHEDULE_AWAY
 }
 
 export {

@@ -91,18 +91,15 @@ class Calendar {
     setup() {
         return __awaiter(this, void 0, void 0, function* () {
             let upcoming = yield this.loadAssignments('Upcoming');
-            app_1.default.log.info(`loaded ${upcoming.length} upcoming assignments`);
+            app_1.default.log.info(`Loaded ${upcoming.length} upcoming assignments`);
             let archived = yield this.loadAssignments('Archive');
-            app_1.default.log.info(`loaded ${archived.length} archived assignments`);
+            app_1.default.log.info(`Loaded ${archived.length} archived assignments`);
             this.markTaskDates();
-            app_1.default.log.info('setting up 60 second interval');
+            app_1.default.log.info('Setting up assignment check interval');
             setInterval(() => __awaiter(this, void 0, void 0, function* () {
-                let due = yield this.checkAssignments();
-                if (due.length > 0) {
-                    let sms = yield sms_1.default.getInstance();
-                    yield sms.sendAssignments(due);
-                }
+                yield this.checkAssignments();
             }), 60 * 1000);
+            yield this.checkAssignments();
             return this;
         });
     }
@@ -309,6 +306,7 @@ class Calendar {
     }
     checkAssignments() {
         return __awaiter(this, void 0, void 0, function* () {
+            app_1.default.log.info('Checking assignments');
             let sheets = yield sheets_1.default.getInstance();
             let assignmentsDue = [];
             let today = moment.default().format('YYYY-MM-DD');
@@ -321,9 +319,13 @@ class Calendar {
                 if (dateTime.format('YYYY-MM-DD') == today &&
                     dateTime.format('HH:mm:ss') <= now) {
                     assignmentsDue.push(assignment);
+                    app_1.default.log.info(`due: ${assignment.task.toLowerCase()}`);
                 }
             }
-            return assignmentsDue;
+            if (assignmentsDue.length > 0) {
+                let sms = sms_1.default.getInstance();
+                yield sms.sendAssignments(assignmentsDue);
+            }
         });
     }
 }

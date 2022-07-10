@@ -1,5 +1,6 @@
 import config from '../config';
-import * as moment from 'moment-timezone';
+import app from '../app';
+
 import { FastifyReply } from 'fastify';
 import { SMSConfig, IncomingMessage, PersonContext } from '../types';
 import { twiml } from 'twilio';
@@ -14,7 +15,7 @@ class SMS {
 
     private static config: SMSConfig;
     static instance: SMS;
-    static yesReplies = ['y', 'yes', 'yep', 'yeah', 'yea', 'done', 'indeed', 'yessir', 'affirmative'];
+    static yesReplies = ['y', 'yes', 'yep', 'yeah', 'yea', 'yay', 'done', 'indeed', 'yessir', 'affirmative'];
     static noReplies = ['n', 'no', 'nope', 'negative', 'nay', 'no sir', 'none'];
 
     twilio: twilio.Twilio;
@@ -41,8 +42,7 @@ class SMS {
         return msg.Body.trim().toLocaleLowerCase().replace(/[!.]^/, '');
     }
 
-    async handleMessage(msg: IncomingMessage): Promise<string> {
-        let person = await this.validateMessage(msg);
+    async handleMessage(person: Person, msg: IncomingMessage): Promise<string> {
         let rsp = '';
         if (person.context == PersonContext.ASSIGNMENT) {
             rsp = await this.handleAssignmentReply(msg, person);
@@ -54,6 +54,21 @@ class SMS {
             rsp = await this.handleBackupMessage(msg);
         } else {
             await this.relayToBackup(msg, person);
+        }
+        return rsp;
+    }
+
+    async handleBackupMessage(msg: IncomingMessage) {
+        let sms = this.normalizedBody(msg);
+        let namesRegex = await this.getNamesRegex();
+        let announceRegex = this.getAnnounceRegex();
+        let rsp = '';
+        if (sms == 'schedule') {
+            await this.scheduleStart();
+        } else if (sms.match(namesRegex)) {
+            await this.relayToPerson(msg);
+        } else if (sms.match(announceRegex)) {
+            rsp = await this.sendAnnouncement(msg);
         }
         return rsp;
     }
@@ -70,8 +85,7 @@ class SMS {
             this.sendMessage(person, `Hi ${person.name}, ${task.question} [reply Y if you're done or Snooze for more time]`);
             person.assignment = assignment;
             person.context = PersonContext.ASSIGNMENT;
-            assignment.status = 'pending';
-            await assignment.save();        
+            await assignment.setPending();
         }
     }
 
@@ -81,31 +95,18 @@ class SMS {
             throw new Error(`${person.name} replied in assignment context without an assignment`);
         }
         if (SMS.yesReplies.indexOf(sms) > -1) {
-            person.assignment.status = 'done';
-            person.assignment.time = moment.default().format('h:mm A');
-            await person.assignment.save();
+            await person.assignment.setDone();
             return Person.getAffirmation();
         } else if (sms == 'snooze') {
             let time = await person.assignment.snooze();
             return `Great, I'll ask again at ${time}. [reply Y at any time once you're done]`;
         }
-        await this.relayToBackup(msg, person);
-        return '';
-    }
-
-    async handleBackupMessage(msg: IncomingMessage) {
-        let sms = this.normalizedBody(msg);
-        let namesRegex = await this.getNamesRegex();
-        let announceRegex = this.getAnnounceRegex();
-        let rsp = '';
-        if (sms == 'schedule') {
-            await this.scheduleStart();
-        } else if (sms.match(namesRegex)) {
-            await this.relayToPerson(msg);
-        } else if (sms.match(announceRegex)) {
-            rsp = await this.sendAnnouncement(msg);
+        if (person.status == 'backup') {
+            await this.handleBackupMessage(msg);
+        } else {
+            await this.relayToBackup(msg, person);
         }
-        return rsp;
+        return '';
     }
 
     async scheduleStart() {
@@ -234,6 +235,7 @@ class SMS {
     }
 
     async sendMessage(person: Person, body: string) {
+        app.log.info(`SMS to ${person.name}: ${body}`);
         await this.twilio.messages.create({
             from: this.phone,
             to: person.phone,

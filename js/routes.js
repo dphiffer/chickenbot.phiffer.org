@@ -23,26 +23,26 @@ function routes(app) {
             };
         });
         app.post('/sms', (request, reply) => __awaiter(this, void 0, void 0, function* () {
-            let sms = yield sms_1.default.getInstance();
+            let sms, person;
+            let rsp = '';
             try {
-                let response = yield sms.handleMessage(request.body);
+                sms = sms_1.default.getInstance();
+                person = yield sms.validateMessage(request.body);
+                app.log.info(`SMS from ${person.name}: ${request.body.Body}`);
+                let response = yield sms.handleMessage(person, request.body);
                 if (response) {
-                    return sms.messageResponse(reply, response);
-                }
-                else {
-                    return {
-                        chickenbot: '🐔'
-                    };
+                    app.log.info(`SMS to ${person.name}: ${response}`);
+                    rsp = sms.messageResponse(reply, response);
                 }
             }
             catch (err) {
                 app.log.error(err);
-                let person = yield sms.validateMessage(request.body);
-                if (person) {
+                if (person && sms) {
                     sms.relayErrorToBackup(request.body, person, err);
+                    rsp = sms.messageResponse(reply, 'Oops, sorry something went wrong.');
                 }
-                return sms.messageResponse(reply, 'Oops, sorry something went wrong.');
             }
+            return rsp;
         }));
         app.post('/update', (request, reply) => __awaiter(this, void 0, void 0, function* () {
             try {
@@ -56,6 +56,7 @@ function routes(app) {
                 };
             }
             catch (err) {
+                app.log.error(err);
                 return {
                     error: err.message
                 };

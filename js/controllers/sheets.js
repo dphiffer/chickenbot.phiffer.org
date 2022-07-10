@@ -43,12 +43,12 @@ class Sheets {
             let creds = JSON.parse(credsJson);
             yield this.doc.useServiceAccountAuth(creds);
             yield this.doc.loadInfo();
-            app_1.default.log.info(`loading '${this.doc.title}'`);
+            app_1.default.log.info(`Loading '${this.doc.title}'`);
             let people = yield this.loadPeople();
             let active = this.getActivePeople();
-            app_1.default.log.info(`loaded ${people.length} people (${active.length} are active)`);
+            app_1.default.log.info(`Loaded ${people.length} people (${active.length} are active)`);
             let tasks = yield this.loadTasks();
-            app_1.default.log.info(`loaded ${tasks.length} tasks`);
+            app_1.default.log.info(`Loaded ${tasks.length} tasks`);
             return this;
         });
     }
@@ -84,6 +84,7 @@ class Sheets {
             assignment.time = data.time;
             assignment.person = data.person;
             assignment.status = data.status;
+            app_1.default.log.info(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
             return assignment;
         });
     }

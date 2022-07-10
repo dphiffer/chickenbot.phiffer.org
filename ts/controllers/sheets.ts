@@ -40,12 +40,12 @@ class Sheets {
         let creds = JSON.parse(credsJson);
         await this.doc.useServiceAccountAuth(creds);
         await this.doc.loadInfo();
-        app.log.info(`loading '${this.doc.title}'`);
+        app.log.info(`Loading '${this.doc.title}'`);
         let people = await this.loadPeople();
         let active = this.getActivePeople();
-        app.log.info(`loaded ${people.length} people (${active.length} are active)`);
+        app.log.info(`Loaded ${people.length} people (${active.length} are active)`);
         let tasks = await this.loadTasks();
-        app.log.info(`loaded ${tasks.length} tasks`);
+        app.log.info(`Loaded ${tasks.length} tasks`);
         return this;
     }
 
@@ -78,6 +78,7 @@ class Sheets {
         assignment.time = data.time;
         assignment.person = data.person;
         assignment.status = data.status;
+        app.log.info(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
         return assignment;
     }
 

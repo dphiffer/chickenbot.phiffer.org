@@ -12,24 +12,25 @@ async function routes(app: FastifyInstance) {
     });
     
     app.post('/sms', async (request: FastifyRequest<{ Body: IncomingMessage }>, reply: FastifyReply) => {
-        let sms = await SMS.getInstance();
+        let sms, person;
+        let rsp = '';
         try {
-            let response = await sms.handleMessage(request.body);
+            sms = SMS.getInstance();
+            person = await sms.validateMessage(request.body);
+            app.log.info(`SMS from ${person.name}: ${request.body.Body}`);
+            let response = await sms.handleMessage(person, request.body);
             if (response) {
-                return sms.messageResponse(reply, response);
-            } else {
-                return {
-                    chickenbot: '🐔'
-                };
+                app.log.info(`SMS to ${person.name}: ${response}`);
+                rsp = sms.messageResponse(reply, response);
             }
         } catch (err) {
             app.log.error(err);
-            let person = await sms.validateMessage(request.body);
-            if (person) {
+            if (person && sms) {
                 sms.relayErrorToBackup(request.body, person, err as Error);
+                rsp = sms.messageResponse(reply, 'Oops, sorry something went wrong.');
             }
-            return sms.messageResponse(reply, 'Oops, sorry something went wrong.');
         }
+        return rsp;
     });
 
     app.post('/update', async (request: FastifyRequest<{ Body: AssignmentUpdate & { secret: string } }>, reply: FastifyReply) => {
@@ -43,6 +44,7 @@ async function routes(app: FastifyInstance) {
                 assignment: assignment
             };
         } catch (err) {
+            app.log.error(err);
             return {
                 error: (err as Error).message
             };
