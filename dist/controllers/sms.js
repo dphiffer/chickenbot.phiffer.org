@@ -57,6 +57,7 @@ class SMS {
         let sms = this.normalizedBody(msg);
         let namesRegex = await this.getNamesRegex();
         let announceRegex = this.getAnnounceRegex();
+        let backupRegex = await this.getBackupRegex();
         let rsp = '';
         if (sms == 'schedule') {
             await this.scheduleStart();
@@ -66,6 +67,12 @@ class SMS {
         }
         else if (sms.match(announceRegex)) {
             rsp = await this.sendAnnouncement(msg);
+        }
+        else if (sms.match(backupRegex)) {
+            rsp = await this.reassignBackup(msg);
+        }
+        else {
+            rsp = `Sorry, I didn't understand that command.`;
         }
         return rsp;
     }
@@ -210,6 +217,24 @@ class SMS {
         }
         await this.sendMessage(relayTo, body);
     }
+    async reassignBackup(msg) {
+        let sheets = await sheets_1.default.getInstance();
+        let currBackup = await sheets.currentBackup();
+        if (!currBackup) {
+            throw new Error('Could not find current backup');
+        }
+        let backupRegex = await this.getBackupRegex();
+        let match = msg.Body.match(backupRegex);
+        if (!match) {
+            throw new Error('Could not match backup regex');
+        }
+        let name = match[1];
+        let [newBackup] = sheets.people.filter(p => p.name.toLowerCase() == name.toLowerCase());
+        await currBackup.updateStatus('active');
+        await newBackup.updateStatus('backup');
+        await this.sendMessage(newBackup, `Hi ${newBackup.name}, ${currBackup.name} has made you the new designated backup.`);
+        return `${newBackup.name} has been notified that they are now the designated backup.`;
+    }
     async validateMessage(msg) {
         let sheets = await sheets_1.default.getInstance();
         if (msg.AccountSid !== SMS.config.accountSid) {
@@ -238,10 +263,15 @@ class SMS {
     async getNamesRegex() {
         let sheets = await sheets_1.default.getInstance();
         let names = sheets.getActivePeople().map(p => p.name);
-        return new RegExp(`^(${names.join('|')}):\s*(.+)$`, 'msi');
+        return new RegExp(`^(${names.join('|')}):\\s*(.+)$`, 'msi');
     }
     getAnnounceRegex() {
         return /announce:\s*(.+)$/msi;
+    }
+    async getBackupRegex() {
+        let sheets = await sheets_1.default.getInstance();
+        let names = sheets.getActivePeople().map(p => p.name);
+        return new RegExp(`^backup:\\s*(${names.join('|')})\\s*$`, 'msi');
     }
 }
 SMS.yesReplies = ['y', 'yes', 'yep', 'yeah', 'yea', 'yay', 'done', 'indeed', 'yessir', 'affirmative'];
