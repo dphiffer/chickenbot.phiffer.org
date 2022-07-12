@@ -28,9 +28,9 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon dist/server.js",
+    "build": "tsc",
     "watch": "tsc -w",
-    "ngrok": "ngrok http 3000",
-    "build": "tsc"
+    "ngrok": "ngrok http 3000"
   },
   "repository": {
     "type": "git",
