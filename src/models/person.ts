@@ -1,17 +1,29 @@
-const moment = require('moment-timezone');
+import { GoogleSpreadsheetRow } from 'google-spreadsheet';
+import { PersonContext } from '../types';
+import moment from 'moment-timezone';
+import Sheets from '../controllers/sheets';
+import Assignment from './assignment';
 
 class Person {
 
-	constructor(row) {
+	name: string;
+	phone: string;
+	status: string;
+	away: string;
+	schedule: null | string = null;
+	assignment: null | Assignment = null;
+	context: PersonContext = PersonContext.READY;
+
+	constructor(sheets: Sheets, row: GoogleSpreadsheetRow) {
 		this.name = row.name;
 		this.phone = this.normalizePhone(row.phone);
 		this.status = row.status;
 		this.away = row.away || '';
 	}
 
-	normalizePhone(phone) {
+	normalizePhone(phone: string) {
 		phone = phone.replace(/\D/g, '');
-		if (phone.substr(0, 1) != '1') {
+		if (phone.substring(0, 1) != '1') {
 			phone = `1${phone}`;
 		}
 		phone = `+${phone}`;
@@ -30,42 +42,28 @@ class Person {
 		return affirmations[index];
 	}
 
-	static async currentBackup(app) {
-		for (let person in app.people) {
-			if (app.people[person].status == 'backup') {
-				return app.people[person];
-			}
-		}
-		// Nobody assigned yet, just pick the first person on the list
-		let sheet = app.doc.sheetsByTitle['People'];
-		let rows = await sheet.getRows();
-		for (let row of rows) {
-			row.status = 'backup';
-			await row.save();
-			app.people[row.name].status = 'backup';
-			return app.people[row.name];
-		}
-	}
-
-	async updateStatus(app, status) {
+	async updateStatus(status: string) {
+		let sheets = await Sheets.getInstance();
 		this.status = status;
-		let sheet = app.doc.sheetsByTitle['People'];
+		let sheet = sheets.doc.sheetsByTitle['People'];
 		let rows = await sheet.getRows();
 		for (let row of rows) {
 			if (row.name == this.name) {
 				row.status = status;
 				await row.save();
-				return this;
+				break;
 			}
 		}
+		return this;
 	}
 
-	async updateAway(app, awayDays) {
+	async updateAway(awayDays: string[]) {
+		let sheets = await Sheets.getInstance();
 		awayDays = awayDays.filter(date => {
 			return date >= moment().format('YYYY-MM-DD');
 		});
 		this.away = awayDays.join(', ');
-		let sheet = app.doc.sheetsByTitle['People'];
+		let sheet = sheets.doc.sheetsByTitle['People'];
 		let rows = await sheet.getRows();
 		for (let row of rows) {
 			if (row.name == this.name) {
@@ -79,7 +77,7 @@ class Person {
 		}).join(', ');
 	}
 
-	isAway(date) {
+	isAway(date: string) {
 		let awayDays = this.away.split(', ');
 		if (awayDays.indexOf(date) > -1) {
 			return true;
@@ -88,4 +86,4 @@ class Person {
 	}
 }
 
-module.exports = Person;
+export default Person;
