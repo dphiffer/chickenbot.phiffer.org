@@ -39,6 +39,9 @@ class Assignment {
         this.person = data.person;
         this.status = data.status;
     }
+    get isoDate() {
+        return moment.default(this.date, 'M/D').format('YYYY-MM-DD');
+    }
     async setPending() {
         this.status = 'pending';
         await this.save();
