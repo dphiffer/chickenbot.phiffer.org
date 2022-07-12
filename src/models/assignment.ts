@@ -32,9 +32,9 @@ class Assignment {
 			let sheets = await Sheets.getInstance();
 			let backup = await sheets.currentBackup();
 			if (backup) {
-				sms.sendMessage(backup, `${this.task}, assigned to ${this.person}, is still pending after one hour.`);
+				sms.sendMessage(backup, `Still pending after one hour: ${this.task}, assigned to ${this.person}.`);
 			}
-		}, 60 * 1000);
+		}, 60 * 60 * 1000);
 	}
 
 	async setDone() {

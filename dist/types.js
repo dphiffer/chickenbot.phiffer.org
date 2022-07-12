@@ -3,10 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PersonContext = void 0;
 var PersonContext;
 (function (PersonContext) {
-    PersonContext[PersonContext["READY"] = 0] = "READY";
-    PersonContext[PersonContext["ASSIGNMENT"] = 1] = "ASSIGNMENT";
-    PersonContext[PersonContext["SCHEDULE_START"] = 2] = "SCHEDULE_START";
-    PersonContext[PersonContext["SCHEDULE_AWAY"] = 3] = "SCHEDULE_AWAY";
+    PersonContext["READY"] = "ready";
+    PersonContext["ASSIGNMENT"] = "assignment";
+    PersonContext["SCHEDULE_START"] = "schedule-start";
+    PersonContext["SCHEDULE_AWAY"] = "schedule-away";
 })(PersonContext || (PersonContext = {}));
 exports.PersonContext = PersonContext;
 //# sourceMappingURL=types.js.map

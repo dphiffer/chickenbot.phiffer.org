@@ -49,10 +49,10 @@ interface AssignmentUpdate {
 }
 
 enum PersonContext {
-    READY,
-    ASSIGNMENT,
-    SCHEDULE_START,
-    SCHEDULE_AWAY
+    READY = 'ready',
+    ASSIGNMENT = 'assignment',
+    SCHEDULE_START = 'schedule-start',
+    SCHEDULE_AWAY = 'schedule-away'
 }
 
 export {
