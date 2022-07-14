@@ -62,7 +62,8 @@ class Calendar {
                 if (day.format('YYYY-MM-DD') > today) {
                     return day.format('YYYY-MM-DD');
                 }
-                if (day.format('YYYY-MM-DD') == today || format == 'YYYY-MM-DD') {
+                if (day.format('YYYY-MM-DD') == today ||
+                    format == 'YYYY-MM-DD') {
                     return false;
                 }
                 else if (format == 'M/D') {
@@ -127,7 +128,7 @@ class Calendar {
     async setupQueue() {
         let sheets = await sheets_1.default.getInstance();
         let people = sheets.getActivePeople();
-        this.queue = people.map(p => p.name);
+        this.queue = people.map((p) => p.name);
         this.queue.sort(() => Math.random() - 0.5);
         this.index = 0;
     }
@@ -136,7 +137,7 @@ class Calendar {
         let fmt = 'YYYY-MM-DD';
         for (let assignment of this.assignments) {
             let date = moment.default(assignment.date, 'M/D');
-            let [task] = sheets.tasks.filter(t => t.name == assignment.task);
+            let [task] = sheets.tasks.filter((t) => t.name == assignment.task);
             if (task && (!task.lastRun || task.lastRun < date.format(fmt))) {
                 task.lastRun = date.format(fmt);
                 task.lastPerson = assignment.person;
@@ -147,7 +148,10 @@ class Calendar {
         for (let task of sheets.tasks) {
             if (!task.lastRun) {
                 task.lastRun = moment.default().format(fmt);
-                task.nextRun = moment.default().add(task.frequency, 'days').format(fmt);
+                task.nextRun = moment
+                    .default()
+                    .add(task.frequency, 'days')
+                    .format(fmt);
             }
             let nextRun = moment.default(task.nextRun, fmt);
             while (nextRun.format(fmt) < today) {
@@ -180,7 +184,7 @@ class Calendar {
                     time: this.getScheduleTime(task.time, date),
                     task: task.name,
                     person: person.name,
-                    status: 'scheduled'
+                    status: 'scheduled',
                 }));
                 assignments.push(assignment);
             }
@@ -191,7 +195,7 @@ class Calendar {
     async selectPerson(task, people, date, iterations = 0) {
         let name = this.queue[this.index];
         this.index = (this.index + 1) % this.queue.length;
-        let [person] = people.filter(p => p.name == name);
+        let [person] = people.filter((p) => p.name == name);
         if (iterations == people.length) {
             let sheets = await sheets_1.default.getInstance();
             let backup = await sheets.currentBackup();
@@ -233,10 +237,11 @@ class Calendar {
                 time: row.time,
                 task: row.task,
                 person: row.person,
-                status: row.status
+                status: row.status,
             };
             await archive.addRow(assignment);
-            if (assignment.status == 'pending' || assignment.status == 'scheduled') {
+            if (assignment.status == 'pending' ||
+                assignment.status == 'scheduled') {
                 pending.push(assignment);
             }
         }
@@ -252,7 +257,7 @@ class Calendar {
                 time: assignment.time,
                 task: assignment.task,
                 person: assignment.person,
-                status: assignment.status
+                status: assignment.status,
             });
         }
     }
@@ -263,7 +268,9 @@ class Calendar {
             let assigned = [];
             for (let assignment of assignments) {
                 if (assignment.person == person.name) {
-                    let date = moment.default(assignment.date, 'M/D').format('ddd M/D');
+                    let date = moment
+                        .default(assignment.date, 'M/D')
+                        .format('ddd M/D');
                     assigned.push(`${date}: ${assignment.task}`);
                 }
             }

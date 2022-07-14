@@ -129,8 +129,8 @@ class SMS {
         let sheets = await sheets_1.default.getInstance();
         let people = sheets.getActivePeople();
         for (let assignment of due) {
-            let [person] = people.filter(p => p.name == assignment.person);
-            let [task] = sheets.tasks.filter(t => t.name == assignment.task);
+            let [person] = people.filter((p) => p.name == assignment.person);
+            let [task] = sheets.tasks.filter((t) => t.name == assignment.task);
             if (!person || !task) {
                 continue;
             }
@@ -174,7 +174,8 @@ class SMS {
         let rsp = '';
         if (SMS.yesReplies.indexOf(sms) > -1) {
             person.context = types_1.PersonContext.SCHEDULE_AWAY_DAYS;
-            rsp = 'Which days will you be away this week? [reply with comma-separated days: Mon, Tue or 6/17, 6/18]';
+            rsp =
+                'Which days will you be away this week? [reply with comma-separated days: Mon, Tue or 6/17, 6/18]';
         }
         else if (SMS.noReplies.indexOf(sms) > -1) {
             person.context = types_1.PersonContext.READY;
@@ -216,7 +217,9 @@ class SMS {
     }
     scheduleAwayTime(person) {
         let days = person.away.split(', ');
-        let day = moment.default(days[person.scheduleDayIndex], 'YYYY-MM-DD').format('ddd M/D');
+        let day = moment
+            .default(days[person.scheduleDayIndex], 'YYYY-MM-DD')
+            .format('ddd M/D');
         return `When will you be away on ${day}? [Reply AM for morning, PM for evening, or Full for the full day]`;
     }
     async handleScheduleAwayTimeReply(msg, person) {
@@ -258,7 +261,7 @@ class SMS {
     async scheduleIfAllAreReady() {
         let sheets = await sheets_1.default.getInstance();
         let activePeople = sheets.getActivePeople();
-        let readyPeople = activePeople.filter(p => p.context == types_1.PersonContext.READY);
+        let readyPeople = activePeople.filter((p) => p.context == types_1.PersonContext.READY);
         let allAreReady = activePeople.length == readyPeople.length;
         if (allAreReady) {
             let calendar = await calendar_1.default.getInstance();
@@ -290,7 +293,8 @@ class SMS {
         if (!backup) {
             throw new Error('No backup found');
         }
-        if (backup.context == types_1.PersonContext.CHAT && ((_a = backup.chatContext) === null || _a === void 0 ? void 0 : _a.name) == person.name) {
+        if (backup.context == types_1.PersonContext.CHAT &&
+            ((_a = backup.chatContext) === null || _a === void 0 ? void 0 : _a.name) == person.name) {
             return;
         }
         if (person.name == backup.name) {
@@ -374,7 +378,7 @@ class SMS {
                 let response = await (0, axios_1.default)({
                     method: 'GET',
                     url: msg[`MediaUrl${num}`],
-                    responseType: 'stream'
+                    responseType: 'stream',
                 });
                 const pipe = response.data.pipe(fs_1.default.createWriteStream(filename));
                 pipe.on('finish', () => {
@@ -402,7 +406,7 @@ class SMS {
         }
         let name = match[1];
         let body = match[2];
-        let [relayTo] = sheets.people.filter(p => p.name == name);
+        let [relayTo] = sheets.people.filter((p) => p.name == name);
         if (!relayTo) {
             throw new Error('Could not find person to relay message to');
         }
@@ -425,7 +429,7 @@ class SMS {
             throw new Error('Could not match backup regex');
         }
         let name = match[1];
-        let [newBackup] = sheets.people.filter(p => p.name.toLowerCase() == name.toLowerCase());
+        let [newBackup] = sheets.people.filter((p) => p.name.toLowerCase() == name.toLowerCase());
         await currBackup.updateStatus('active');
         await newBackup.updateStatus('backup');
         await this.sendMessage(newBackup, `Hi ${newBackup.name}, ${currBackup.name} has made you the new designated backup.`);
@@ -436,7 +440,7 @@ class SMS {
         if (msg.AccountSid !== SMS.config.accountSid) {
             throw new Error('Whoops, Twilio needs to be configured.');
         }
-        let [person] = sheets.people.filter(p => msg.From == p.phone);
+        let [person] = sheets.people.filter((p) => msg.From == p.phone);
         if (!person) {
             throw new Error('Sorry, I don’t know who you are.');
         }
@@ -448,7 +452,7 @@ class SMS {
             from: this.phone,
             to: person.phone,
             body: body,
-            mediaUrl: media
+            mediaUrl: media,
         });
     }
     messageResponse(reply, response) {
@@ -459,7 +463,7 @@ class SMS {
     }
     async getNamesRegex() {
         let sheets = await sheets_1.default.getInstance();
-        let names = sheets.getActivePeople().map(p => p.name);
+        let names = sheets.getActivePeople().map((p) => p.name);
         return new RegExp(`^(${names.join('|')}):\\s*(.+)$`, 'msi');
     }
     getAnnounceRegex() {
@@ -467,11 +471,21 @@ class SMS {
     }
     async getBackupRegex() {
         let sheets = await sheets_1.default.getInstance();
-        let names = sheets.getActivePeople().map(p => p.name);
+        let names = sheets.getActivePeople().map((p) => p.name);
         return new RegExp(`^backup:\\s*(${names.join('|')})\\s*$`, 'msi');
     }
 }
-SMS.yesReplies = ['y', 'yes', 'yep', 'yeah', 'yea', 'yay', 'indeed', 'yessir', 'affirmative'];
+SMS.yesReplies = [
+    'y',
+    'yes',
+    'yep',
+    'yeah',
+    'yea',
+    'yay',
+    'indeed',
+    'yessir',
+    'affirmative',
+];
 SMS.noReplies = ['n', 'no', 'nope', 'negative', 'nay', 'no sir', 'none'];
 exports.default = SMS;
 //# sourceMappingURL=sms.js.map

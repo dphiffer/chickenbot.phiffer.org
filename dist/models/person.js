@@ -35,7 +35,7 @@ class Person {
             'The chickens appreciate you so much.',
             'Excellent, thank you.',
             'You’re the best!',
-            '❤️🐔❤️'
+            '❤️🐔❤️',
         ];
         let index = Math.floor(Math.random() * affirmations.length);
         return affirmations[index];
@@ -66,7 +66,8 @@ class Person {
                 break;
             }
         }
-        return awayDays.map(date => {
+        return awayDays
+            .map((date) => {
             let suffix = '';
             if (date.match(/ am$/)) {
                 date = date.replace(/ am$/, '');
@@ -81,7 +82,8 @@ class Person {
                 suffix = ' (full day)';
             }
             return (0, moment_timezone_1.default)(date, 'YYYY-MM-DD').format('ddd M/D') + suffix;
-        }).join(', ');
+        })
+            .join(', ');
     }
     isAway(date, time) {
         let awayDays = this.away.split(', ');

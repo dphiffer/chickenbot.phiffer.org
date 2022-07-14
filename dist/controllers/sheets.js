@@ -74,13 +74,13 @@ class Sheets {
         return assignment;
     }
     validateSecret(data) {
-        return (data.secret && Sheets.config.webhookSecret == data.secret);
+        return data.secret && Sheets.config.webhookSecret == data.secret;
     }
     getActivePeople() {
-        return this.people.filter(p => (p.status == 'active' || p.status == 'backup'));
+        return this.people.filter((p) => p.status == 'active' || p.status == 'backup');
     }
     async currentBackup() {
-        let [person] = this.people.filter(p => p.status == 'backup');
+        let [person] = this.people.filter((p) => p.status == 'backup');
         if (person) {
             return person;
         }
@@ -90,7 +90,7 @@ class Sheets {
         for (let row of rows) {
             row.status = 'backup';
             await row.save();
-            [person] = this.people.filter(p => p.name == row.name);
+            [person] = this.people.filter((p) => p.name == row.name);
             person.status = 'backup';
             return person;
         }

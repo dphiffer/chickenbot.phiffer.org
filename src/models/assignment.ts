@@ -5,22 +5,21 @@ import Sheets from '../controllers/sheets';
 import SMS from '../controllers/sms';
 
 class Assignment {
-
 	sheet: string;
-    date: string;
-    time: string;
-    task: string;
-    person: string;
-    status: string;
-	
+	date: string;
+	time: string;
+	task: string;
+	person: string;
+	status: string;
+
 	timeout: NodeJS.Timeout | null = null;
 
 	constructor(sheet: string, data: AssignmentUpdate) {
-		this.sheet = sheet
+		this.sheet = sheet;
 		this.date = data.date;
 		this.time = data.time;
 		this.task = data.task;
-        this.person = data.person;
+		this.person = data.person;
 		this.status = data.status;
 	}
 
@@ -36,7 +35,10 @@ class Assignment {
 			let sheets = await Sheets.getInstance();
 			let backup = await sheets.currentBackup();
 			if (backup) {
-				sms.sendMessage(backup, `Still pending after one hour: ${this.task}, assigned to ${this.person}.`);
+				sms.sendMessage(
+					backup,
+					`Still pending after one hour: ${this.task}, assigned to ${this.person}.`
+				);
 			}
 		}, 60 * 60 * 1000);
 	}

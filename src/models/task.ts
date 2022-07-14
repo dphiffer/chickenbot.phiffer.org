@@ -1,7 +1,6 @@
 import { GoogleSpreadsheetRow } from 'google-spreadsheet';
 
 class Task {
-
 	name: string;
 	question: string;
 	frequency: number;

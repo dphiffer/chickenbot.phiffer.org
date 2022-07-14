@@ -16,21 +16,21 @@ const sms_1 = __importDefault(require("./controllers/sms"));
 const configPath = `${path_1.default.dirname(__dirname)}/config/config.json`;
 const config = JSON.parse(fs_1.default.readFileSync(configPath, 'utf8'));
 const app = (0, fastify_1.default)({
-    logger: config.logger
+    logger: config.logger,
 });
 app.register(formbody_1.default);
 app.register(view_1.default, {
     engine: {
-        ejs: require('ejs')
+        ejs: require('ejs'),
     },
     root: path_1.default.join(path_1.default.dirname(__dirname), 'views'),
     layout: 'layout.ejs',
     defaultContext: {
-        url: config.url
-    }
+        url: config.url,
+    },
 });
 app.register(static_1.default, {
-    root: path_1.default.join(path_1.default.dirname(__dirname), 'public')
+    root: path_1.default.join(path_1.default.dirname(__dirname), 'public'),
 });
 app.register(routes_1.default);
 sheets_1.default.configure(config.google);

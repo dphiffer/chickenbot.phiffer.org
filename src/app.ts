@@ -15,21 +15,21 @@ const configPath = `${path.dirname(__dirname)}/config/config.json`;
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
 const app = Fastify({
-    logger: config.logger
+	logger: config.logger,
 });
 app.register(formBodyPlugin);
 app.register(pointOfView, {
-    engine: {
-        ejs: require('ejs')
-    },
-    root: path.join(path.dirname(__dirname), 'views'),
-    layout: 'layout.ejs',
-    defaultContext: {
-        url: config.url
-    }
+	engine: {
+		ejs: require('ejs'),
+	},
+	root: path.join(path.dirname(__dirname), 'views'),
+	layout: 'layout.ejs',
+	defaultContext: {
+		url: config.url,
+	},
 });
 app.register(fastifyStatic, {
-    root: path.join(path.dirname(__dirname), 'public')
+	root: path.join(path.dirname(__dirname), 'public'),
 });
 app.register(routes);
 
@@ -38,10 +38,10 @@ SMS.configure(config.twilio);
 Calendar.configure(config.calendar);
 
 (async () => {
-    let sheets = await Sheets.getInstance();
-    await sheets.setup();
-    let calendar = await Calendar.getInstance();
-    await calendar.setup();
+	let sheets = await Sheets.getInstance();
+	await sheets.setup();
+	let calendar = await Calendar.getInstance();
+	await calendar.setup();
 })();
 
 export default app;

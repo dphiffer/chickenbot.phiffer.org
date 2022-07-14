@@ -19,7 +19,7 @@ async function routes(app) {
             spreadsheet_url: `https://docs.google.com/spreadsheets/d/${sheets.id}/edit`,
             assignments: calendar.assignments,
             backup: backupName,
-            today: (0, moment_1.default)().format('YYYY-MM-DD')
+            today: (0, moment_1.default)().format('YYYY-MM-DD'),
         });
     });
     app.post('/sms', async (request, reply) => {
@@ -49,13 +49,13 @@ async function routes(app) {
             let sheets = await sheets_1.default.getInstance();
             let assignment = await sheets.updateAssignment(request.body);
             return {
-                assignment: assignment
+                assignment: assignment,
             };
         }
         catch (err) {
             app.log.error(err);
             return {
-                error: err.message
+                error: err.message,
             };
         }
     });

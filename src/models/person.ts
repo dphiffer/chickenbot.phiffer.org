@@ -7,7 +7,6 @@ import Assignment from './assignment';
 import { clearTimeout } from 'timers';
 
 class Person {
-
 	name: string;
 	phone: string;
 	status: string;
@@ -41,7 +40,7 @@ class Person {
 			'The chickens appreciate you so much.',
 			'Excellent, thank you.',
 			'You’re the best!',
-			'❤️🐔❤️'
+			'❤️🐔❤️',
 		];
 		let index = Math.floor(Math.random() * affirmations.length);
 		return affirmations[index];
@@ -74,20 +73,22 @@ class Person {
 				break;
 			}
 		}
-		return awayDays.map(date => {
-			let suffix = '';
-			if (date.match(/ am$/)) {
-				date = date.replace(/ am$/, '');
-				suffix = ' (morning)';
-			} else if (date.match(/ pm$/)) {
-				date = date.replace(/ pm$/, '');
-				suffix = ' (evening)';
-			} else if (date.match(/ full$/)) {
-				date = date.replace(/ full$/, '');
-				suffix = ' (full day)';
-			}
-			return moment(date, 'YYYY-MM-DD').format('ddd M/D') + suffix;
-		}).join(', ');
+		return awayDays
+			.map((date) => {
+				let suffix = '';
+				if (date.match(/ am$/)) {
+					date = date.replace(/ am$/, '');
+					suffix = ' (morning)';
+				} else if (date.match(/ pm$/)) {
+					date = date.replace(/ pm$/, '');
+					suffix = ' (evening)';
+				} else if (date.match(/ full$/)) {
+					date = date.replace(/ full$/, '');
+					suffix = ' (full day)';
+				}
+				return moment(date, 'YYYY-MM-DD').format('ddd M/D') + suffix;
+			})
+			.join(', ');
 	}
 
 	isAway(date: string, time: string) {
@@ -99,7 +100,10 @@ class Person {
 			let regex = new RegExp(`^${date} (am|pm|full)$`);
 			let match = day.match(regex);
 			if (match) {
-				let taskTime = moment(`${date} ${time}`, 'YYYY-MM-DD h:mm A').format('YYYY-MM-DD HH:mm');
+				let taskTime = moment(
+					`${date} ${time}`,
+					'YYYY-MM-DD h:mm A'
+				).format('YYYY-MM-DD HH:mm');
 				if (match[1] == 'am') {
 					let awayStart = `${date} 00:00`;
 					let awayEnd = `${date} 12:00`;
@@ -120,8 +124,13 @@ class Person {
 		return false;
 	}
 
-	async setTemporaryContext(context: PersonContext, chatContext: null | Person = null) {
-		app.log.info(`Setting ${this.name}'s temporary context to '${context}'`);
+	async setTemporaryContext(
+		context: PersonContext,
+		chatContext: null | Person = null
+	) {
+		app.log.info(
+			`Setting ${this.name}'s temporary context to '${context}'`
+		);
 		this.context = context;
 		if (chatContext) {
 			this.chatContext = chatContext;
@@ -130,7 +139,9 @@ class Person {
 			clearTimeout(this.contextTimeout);
 		}
 		this.contextTimeout = setTimeout(() => {
-			app.log.info(`Resetting ${this.name}'s context to '${PersonContext.READY}'`);
+			app.log.info(
+				`Resetting ${this.name}'s context to '${PersonContext.READY}'`
+			);
 			if (this.context == context) {
 				this.context = PersonContext.READY;
 			}
