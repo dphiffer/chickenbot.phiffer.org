@@ -93,13 +93,13 @@ class SMS {
             await this.setAnnounceContext(backup);
         }
         else if (backup.context == types_1.PersonContext.ANNOUNCE) {
-            rsp = await this.sendAnnouncement(msg.Body);
+            rsp = await this.sendAnnouncement(msg, backup);
         }
         else if (sms.match(namesRegex)) {
-            await this.relayToPerson(msg);
+            await this.relayToPerson(msg, backup);
         }
         else if (sms.match(announceRegex)) {
-            rsp = await this.relayAnnouncement(msg);
+            rsp = await this.relayAnnouncement(msg, backup);
         }
         else if (sms.match(backupRegex)) {
             rsp = await this.reassignBackup(msg);
@@ -227,28 +227,36 @@ class SMS {
         if (backup.context == types_1.PersonContext.CHAT && ((_a = backup.chatContext) === null || _a === void 0 ? void 0 : _a.name) == person.name) {
             return;
         }
+        if (person.name == backup.name) {
+            return;
+        }
         await backup.setTemporaryContext(types_1.PersonContext.CHAT, person);
         await this.sendMessage(backup, `[Now chatting with ${person.name}]`);
     }
-    async relayAnnouncement(msg) {
+    async relayAnnouncement(msg, backup) {
         let match = msg.Body.match(this.getAnnounceRegex());
         if (!match) {
             throw new Error('Could not match announce regex');
         }
-        let response = await this.sendAnnouncement(match[1]);
+        msg.Body = match[1];
+        let response = await this.sendAnnouncement(msg, backup);
         return response;
     }
-    async sendAnnouncement(body) {
+    async sendAnnouncement(msg, backup) {
         let sheets = await sheets_1.default.getInstance();
         let people = sheets.getActivePeople();
         let count = 0;
+        let media = await this.checkForMedia(msg, backup);
+        if (media.length > 0 && msg.Body == '') {
+            msg.Body = '📷';
+        }
         for (let person of people) {
             if (person.status != 'backup') {
-                await this.sendMessage(person, body);
+                await this.sendMessage(person, msg.Body, media);
                 count++;
             }
         }
-        return `Sent announcement to ${count} people: ${body}`;
+        return `Sent announcement to ${count} people: ${msg.Body}`;
     }
     async relayToBackup(msg, person) {
         let sheets = await sheets_1.default.getInstance();
@@ -289,13 +297,14 @@ class SMS {
                 else {
                     throw new Error(`Unexpected image content-type: ${msg[`MediaContentType${num}`]}`);
                 }
+                let name = person.name.toLowerCase().replace(/\W+/g, '-');
                 let fileNum = 0;
-                let filename = `${root}/public/media/${date}-${fileNum}.${ext}`;
+                let filename = `${root}/public/media/${date}-${name}-${fileNum}.${ext}`;
                 while (fs_1.default.existsSync(filename)) {
                     fileNum++;
-                    filename = `${root}/public/media/${date}-${fileNum}.${ext}`;
+                    filename = `${root}/public/media/${date}-${name}-${fileNum}.${ext}`;
                 }
-                let publicPath = `/media/${date}-${fileNum}.${ext}`;
+                let publicPath = `/media/${date}-${name}-${fileNum}.${ext}`;
                 let response = await (0, axios_1.default)({
                     method: 'GET',
                     url: msg[`MediaUrl${num}`],
@@ -312,10 +321,13 @@ class SMS {
         });
     }
     async relayErrorToBackup(msg, person, error) {
-        msg.Body = `${person.name}: ${msg.Body}\n${error.message}`;
+        msg.Body = error.message;
+        if (person.status != 'backup') {
+            msg.Body = `${person.name}: ${msg.Body}\n\n---\n${error.message}`;
+        }
         await this.relayToBackup(msg, person);
     }
-    async relayToPerson(msg) {
+    async relayToPerson(msg, backup) {
         let sheets = await sheets_1.default.getInstance();
         let namesRegex = await this.getNamesRegex();
         let match = msg.Body.match(namesRegex);
@@ -328,8 +340,12 @@ class SMS {
         if (!relayTo) {
             throw new Error('Could not find person to relay message to');
         }
+        let media = await this.checkForMedia(msg, backup);
+        if (media.length > 0 && msg.Body == '') {
+            msg.Body = '📷';
+        }
         await this.setChatContext(relayTo);
-        await this.sendMessage(relayTo, body);
+        await this.sendMessage(relayTo, body, media);
     }
     async reassignBackup(msg) {
         let sheets = await sheets_1.default.getInstance();
