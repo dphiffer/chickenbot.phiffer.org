@@ -5,6 +5,8 @@ var PersonContext;
 (function (PersonContext) {
     PersonContext["READY"] = "ready";
     PersonContext["ASSIGNMENT"] = "assignment";
+    PersonContext["ANNOUNCE"] = "announce";
+    PersonContext["CHAT"] = "chat";
     PersonContext["SCHEDULE_START"] = "schedule-start";
     PersonContext["SCHEDULE_AWAY"] = "schedule-away";
 })(PersonContext || (PersonContext = {}));

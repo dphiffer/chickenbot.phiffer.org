@@ -1,8 +1,10 @@
+import app from '../app';
 import { GoogleSpreadsheetRow } from 'google-spreadsheet';
 import { PersonContext } from '../types';
 import moment from 'moment-timezone';
 import Sheets from '../controllers/sheets';
 import Assignment from './assignment';
+import { clearTimeout } from 'timers';
 
 class Person {
 
@@ -13,6 +15,8 @@ class Person {
 	schedule: null | string = null;
 	assignment: null | Assignment = null;
 	context: PersonContext = PersonContext.READY;
+	chatContext: null | Person = null;
+	contextTimeout: null | NodeJS.Timeout = null;
 
 	constructor(sheets: Sheets, row: GoogleSpreadsheetRow) {
 		this.name = row.name;
@@ -83,6 +87,25 @@ class Person {
 			return true;
 		}
 		return false;
+	}
+
+	async setTemporaryContext(context: PersonContext, chatContext: null | Person = null) {
+		app.log.info(`Setting ${this.name}'s temporary context to '${context}'`);
+		this.context = context;
+		if (chatContext) {
+			this.chatContext = chatContext;
+		}
+		if (this.contextTimeout) {
+			clearTimeout(this.contextTimeout);
+		}
+		this.contextTimeout = setTimeout(() => {
+			app.log.info(`Resetting ${this.name}'s context to '${PersonContext.READY}'`);
+			if (this.context == context) {
+				this.context = PersonContext.READY;
+			}
+			this.chatContext = null;
+			this.contextTimeout = null;
+		}, 60 * 1000);
 	}
 }
 

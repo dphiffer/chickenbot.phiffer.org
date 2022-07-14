@@ -73,14 +73,14 @@ class SMS {
             rsp = await this.handleScheduleAwayReply(msg, person);
         }
         else if (person.status == 'backup') {
-            rsp = await this.handleBackupMessage(msg);
+            rsp = await this.handleBackupMessage(msg, person);
         }
         else {
             await this.relayToBackup(msg, person);
         }
         return rsp;
     }
-    async handleBackupMessage(msg) {
+    async handleBackupMessage(msg, backup) {
         let sms = this.normalizedBody(msg);
         let namesRegex = await this.getNamesRegex();
         let announceRegex = this.getAnnounceRegex();
@@ -89,14 +89,23 @@ class SMS {
         if (sms == 'schedule') {
             await this.scheduleStart();
         }
+        else if (sms == 'announce') {
+            await this.setAnnounceContext(backup);
+        }
+        else if (backup.context == types_1.PersonContext.ANNOUNCE) {
+            rsp = await this.sendAnnouncement(msg.Body);
+        }
         else if (sms.match(namesRegex)) {
             await this.relayToPerson(msg);
         }
         else if (sms.match(announceRegex)) {
-            rsp = await this.sendAnnouncement(msg);
+            rsp = await this.relayAnnouncement(msg);
         }
         else if (sms.match(backupRegex)) {
             rsp = await this.reassignBackup(msg);
+        }
+        else if (backup.context == types_1.PersonContext.CHAT && backup.chatContext) {
+            await this.sendMessage(backup.chatContext, msg.Body);
         }
         else {
             rsp = `Sorry, I didn't understand that command.`;
@@ -132,7 +141,7 @@ class SMS {
             return `Great, I'll ask again at ${time}. [reply Y at any time once you're done]`;
         }
         if (person.status == 'backup') {
-            await this.handleBackupMessage(msg);
+            await this.handleBackupMessage(msg, person);
         }
         else {
             await this.relayToBackup(msg, person);
@@ -201,14 +210,37 @@ class SMS {
             }
         }
     }
-    async sendAnnouncement(msg) {
+    async setAnnounceContext(backup) {
+        if (backup.context == types_1.PersonContext.ANNOUNCE) {
+            return;
+        }
+        await backup.setTemporaryContext(types_1.PersonContext.ANNOUNCE);
+        await this.sendMessage(backup, '[Now announcing messages]');
+    }
+    async setChatContext(person) {
+        var _a;
         let sheets = await sheets_1.default.getInstance();
-        let people = sheets.getActivePeople();
+        let backup = await sheets.currentBackup();
+        if (!backup) {
+            throw new Error('No backup found');
+        }
+        if (backup.context == types_1.PersonContext.CHAT && ((_a = backup.chatContext) === null || _a === void 0 ? void 0 : _a.name) == person.name) {
+            return;
+        }
+        await backup.setTemporaryContext(types_1.PersonContext.CHAT, person);
+        await this.sendMessage(backup, `[Now chatting with ${person.name}]`);
+    }
+    async relayAnnouncement(msg) {
         let match = msg.Body.match(this.getAnnounceRegex());
         if (!match) {
             throw new Error('Could not match announce regex');
         }
-        let body = match[1];
+        let response = await this.sendAnnouncement(match[1]);
+        return response;
+    }
+    async sendAnnouncement(body) {
+        let sheets = await sheets_1.default.getInstance();
+        let people = sheets.getActivePeople();
         let count = 0;
         for (let person of people) {
             if (person.status != 'backup') {
@@ -216,15 +248,17 @@ class SMS {
                 count++;
             }
         }
-        return `Sent announcement to ${count} people.`;
+        return `Sent announcement to ${count} people: ${body}`;
     }
     async relayToBackup(msg, person) {
         let sheets = await sheets_1.default.getInstance();
         let backup = await sheets.currentBackup();
         let media = await this.checkForMedia(msg, person);
-        if (backup) {
-            await this.sendMessage(backup, `${person.name}: ${msg.Body}`, media);
+        if (!backup) {
+            throw new Error('No backup found');
         }
+        await this.sendMessage(backup, `${person.name}: ${msg.Body}`, media);
+        await this.setChatContext(person);
     }
     checkForMedia(msg, person) {
         if (!msg.NumMedia || !msg.NumMedia.match(/^\d+$/)) {
@@ -294,6 +328,7 @@ class SMS {
         if (!relayTo) {
             throw new Error('Could not find person to relay message to');
         }
+        await this.setChatContext(relayTo);
         await this.sendMessage(relayTo, body);
     }
     async reassignBackup(msg) {

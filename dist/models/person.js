@@ -3,14 +3,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const app_1 = __importDefault(require("../app"));
 const types_1 = require("../types");
 const moment_timezone_1 = __importDefault(require("moment-timezone"));
 const sheets_1 = __importDefault(require("../controllers/sheets"));
+const timers_1 = require("timers");
 class Person {
     constructor(sheets, row) {
         this.schedule = null;
         this.assignment = null;
         this.context = types_1.PersonContext.READY;
+        this.chatContext = null;
+        this.contextTimeout = null;
         this.name = row.name;
         this.phone = this.normalizePhone(row.phone);
         this.status = row.status;
@@ -74,6 +78,24 @@ class Person {
             return true;
         }
         return false;
+    }
+    async setTemporaryContext(context, chatContext = null) {
+        app_1.default.log.info(`Setting ${this.name}'s temporary context to '${context}'`);
+        this.context = context;
+        if (chatContext) {
+            this.chatContext = chatContext;
+        }
+        if (this.contextTimeout) {
+            (0, timers_1.clearTimeout)(this.contextTimeout);
+        }
+        this.contextTimeout = setTimeout(() => {
+            app_1.default.log.info(`Resetting ${this.name}'s context to '${types_1.PersonContext.READY}'`);
+            if (this.context == context) {
+                this.context = types_1.PersonContext.READY;
+            }
+            this.chatContext = null;
+            this.contextTimeout = null;
+        }, 60 * 1000);
     }
 }
 exports.default = Person;

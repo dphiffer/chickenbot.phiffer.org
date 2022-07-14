@@ -52,6 +52,8 @@ interface AssignmentUpdate {
 enum PersonContext {
     READY = 'ready',
     ASSIGNMENT = 'assignment',
+    ANNOUNCE = 'announce',
+    CHAT = 'chat',
     SCHEDULE_START = 'schedule-start',
     SCHEDULE_AWAY = 'schedule-away'
 }
