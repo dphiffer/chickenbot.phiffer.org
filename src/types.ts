@@ -55,7 +55,10 @@ enum PersonContext {
     ANNOUNCE = 'announce',
     CHAT = 'chat',
     SCHEDULE_START = 'schedule-start',
-    SCHEDULE_AWAY = 'schedule-away'
+    SCHEDULE_AWAY_DAYS = 'schedule-away-days',
+    SCHEDULE_AWAY_FULL = 'schedule-away-full',
+    SCHEDULE_AWAY_TIME = 'schedule-away-time',
+    SCHEDULE_AWAY_CONFIRM = 'schedule-away-confirm'
 }
 
 export {

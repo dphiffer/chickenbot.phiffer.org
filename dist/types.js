@@ -8,7 +8,10 @@ var PersonContext;
     PersonContext["ANNOUNCE"] = "announce";
     PersonContext["CHAT"] = "chat";
     PersonContext["SCHEDULE_START"] = "schedule-start";
-    PersonContext["SCHEDULE_AWAY"] = "schedule-away";
+    PersonContext["SCHEDULE_AWAY_DAYS"] = "schedule-away-days";
+    PersonContext["SCHEDULE_AWAY_FULL"] = "schedule-away-full";
+    PersonContext["SCHEDULE_AWAY_TIME"] = "schedule-away-time";
+    PersonContext["SCHEDULE_AWAY_CONFIRM"] = "schedule-away-confirm";
 })(PersonContext || (PersonContext = {}));
 exports.PersonContext = PersonContext;
 //# sourceMappingURL=types.js.map

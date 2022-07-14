@@ -15,6 +15,7 @@ class Person {
         this.context = types_1.PersonContext.READY;
         this.chatContext = null;
         this.contextTimeout = null;
+        this.scheduleDayIndex = 0;
         this.name = row.name;
         this.phone = this.normalizePhone(row.phone);
         this.status = row.status;
@@ -54,11 +55,8 @@ class Person {
         return this;
     }
     async updateAway(awayDays) {
-        let sheets = await sheets_1.default.getInstance();
-        awayDays = awayDays.filter(date => {
-            return date >= (0, moment_timezone_1.default)().format('YYYY-MM-DD');
-        });
         this.away = awayDays.join(', ');
+        let sheets = await sheets_1.default.getInstance();
         let sheet = sheets.doc.sheetsByTitle['People'];
         let rows = await sheet.getRows();
         for (let row of rows) {
@@ -69,13 +67,50 @@ class Person {
             }
         }
         return awayDays.map(date => {
-            return (0, moment_timezone_1.default)(date, 'YYYY-MM-DD').format('ddd M/D');
+            let suffix = '';
+            if (date.match(/ am$/)) {
+                date = date.replace(/ am$/, '');
+                suffix = ' (morning)';
+            }
+            else if (date.match(/ pm$/)) {
+                date = date.replace(/ pm$/, '');
+                suffix = ' (evening)';
+            }
+            else if (date.match(/ full$/)) {
+                date = date.replace(/ full$/, '');
+                suffix = ' (full day)';
+            }
+            return (0, moment_timezone_1.default)(date, 'YYYY-MM-DD').format('ddd M/D') + suffix;
         }).join(', ');
     }
-    isAway(date) {
+    isAway(date, time) {
         let awayDays = this.away.split(', ');
         if (awayDays.indexOf(date) > -1) {
             return true;
+        }
+        for (let day of awayDays) {
+            let regex = new RegExp(`^${date} (am|pm|full)$`);
+            let match = day.match(regex);
+            if (match) {
+                let taskTime = (0, moment_timezone_1.default)(`${date} ${time}`, 'YYYY-MM-DD h:mm A').format('YYYY-MM-DD HH:mm');
+                if (match[1] == 'am') {
+                    let awayStart = `${date} 00:00`;
+                    let awayEnd = `${date} 12:00`;
+                    if (taskTime >= awayStart && taskTime <= awayEnd) {
+                        return true;
+                    }
+                }
+                else if (match[1] == 'pm') {
+                    let awayStart = `${date} 12:00`;
+                    let awayEnd = `${date} 23:59`;
+                    if (taskTime >= awayStart && taskTime <= awayEnd) {
+                        return true;
+                    }
+                }
+                else if (match[1] == 'full') {
+                    return true;
+                }
+            }
         }
         return false;
     }

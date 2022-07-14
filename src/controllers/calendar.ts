@@ -110,7 +110,7 @@ class Calendar {
 		await sheets.loadTasks();
 		await this.setupQueue();
 		await this.markTaskDates();
-		await this.archiveCompleted();
+		await this.archiveAssignments();
 		let assignments = await this.scheduleForWeek();
 		await this.addUpcoming(assignments);
 		await this.setAssigned(assignments);
@@ -198,7 +198,7 @@ class Calendar {
 			}
 		} else if (name == task.lastPerson) {
 			person = await this.selectPerson(task, people, date, iterations + 1);
-		} else if (person.isAway(date)) {
+		} else if (person.isAway(date, task.time)) {
 			person = await this.selectPerson(task, people, date, iterations + 1);
 		}
 		return person;
@@ -218,7 +218,7 @@ class Calendar {
 		}
 	}
 
-	async archiveCompleted() {
+	async archiveAssignments() {
 		let sheets = await Sheets.getInstance();
 		let upcoming = sheets.doc.sheetsByTitle['Upcoming'];
 		let archive = sheets.doc.sheetsByTitle['Archive'];
@@ -234,7 +234,7 @@ class Calendar {
 				status: row.status
 			};
 			await archive.addRow(assignment);
-			if (assignment.status != 'complete') {
+			if (assignment.status == 'pending' || assignment.status == 'scheduled') {
 				pending.push(assignment);
 			}
 		}

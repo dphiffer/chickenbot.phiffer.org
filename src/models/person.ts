@@ -17,6 +17,7 @@ class Person {
 	context: PersonContext = PersonContext.READY;
 	chatContext: null | Person = null;
 	contextTimeout: null | NodeJS.Timeout = null;
+	scheduleDayIndex: number = 0;
 
 	constructor(sheets: Sheets, row: GoogleSpreadsheetRow) {
 		this.name = row.name;
@@ -62,11 +63,8 @@ class Person {
 	}
 
 	async updateAway(awayDays: string[]) {
-		let sheets = await Sheets.getInstance();
-		awayDays = awayDays.filter(date => {
-			return date >= moment().format('YYYY-MM-DD');
-		});
 		this.away = awayDays.join(', ');
+		let sheets = await Sheets.getInstance();
 		let sheet = sheets.doc.sheetsByTitle['People'];
 		let rows = await sheet.getRows();
 		for (let row of rows) {
@@ -77,14 +75,47 @@ class Person {
 			}
 		}
 		return awayDays.map(date => {
-			return moment(date, 'YYYY-MM-DD').format('ddd M/D');
+			let suffix = '';
+			if (date.match(/ am$/)) {
+				date = date.replace(/ am$/, '');
+				suffix = ' (morning)';
+			} else if (date.match(/ pm$/)) {
+				date = date.replace(/ pm$/, '');
+				suffix = ' (evening)';
+			} else if (date.match(/ full$/)) {
+				date = date.replace(/ full$/, '');
+				suffix = ' (full day)';
+			}
+			return moment(date, 'YYYY-MM-DD').format('ddd M/D') + suffix;
 		}).join(', ');
 	}
 
-	isAway(date: string) {
+	isAway(date: string, time: string) {
 		let awayDays = this.away.split(', ');
 		if (awayDays.indexOf(date) > -1) {
 			return true;
+		}
+		for (let day of awayDays) {
+			let regex = new RegExp(`^${date} (am|pm|full)$`);
+			let match = day.match(regex);
+			if (match) {
+				let taskTime = moment(`${date} ${time}`, 'YYYY-MM-DD h:mm A').format('YYYY-MM-DD HH:mm');
+				if (match[1] == 'am') {
+					let awayStart = `${date} 00:00`;
+					let awayEnd = `${date} 12:00`;
+					if (taskTime >= awayStart && taskTime <= awayEnd) {
+						return true;
+					}
+				} else if (match[1] == 'pm') {
+					let awayStart = `${date} 12:00`;
+					let awayEnd = `${date} 23:59`;
+					if (taskTime >= awayStart && taskTime <= awayEnd) {
+						return true;
+					}
+				} else if (match[1] == 'full') {
+					return true;
+				}
+			}
 		}
 		return false;
 	}

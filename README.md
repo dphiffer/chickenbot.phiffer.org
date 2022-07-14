@@ -92,6 +92,29 @@ Configure the phone number to send webhook requests to the chickenbot server for
 From the designated backup phone:
 
 * Send a `schedule` SMS to the chickenbot phone number to schedule tasks for the coming week.
-* Send `announce: [message]` to relay a message to everyone.
+* Send `announce: [message]` to relay a message to everyone (or just `announce` to announce all subsequent messages, for one hour)
 * Send `[name]: [message]` to relay a message to a particular person by name.
 * Send `backup: [name]` to reassign the designated backup to someone else.
+
+## Scheduling tasks
+
+Scheduling tasks happens on a weekly basis.
+
+1. Designated backup sends `schedule` command.
+2. Each active person is prompted for when they are away (see diagram below).
+3. Once everyone has responded, tasks are scheduled for the week and each person receives a list of their tasks.
+
+```mermaid
+graph TD;
+    start(schedule command)-->away{Away this week?};
+    away-- No -->wait(Wait until others respond);
+    wait-->send(Send schedules out);
+    away-- Yes -->days{Which days?};
+    days-->full{Full days?};
+    full-- Yes -->wait;
+    full-- No -->times{AM, PM, or full?};
+    times-- Repeat for each day -->times;
+    times-->confirm{Confirm days/times};
+    confirm-- Yes -->wait;
+    confirm-- No -->days;
+```

@@ -58,8 +58,8 @@ class SMS {
         let postfix = phone.substring(8, 12);
         return `(${area}) ${prefix}-${postfix}`;
     }
-    normalizedBody(msg) {
-        return msg.Body.trim().toLocaleLowerCase().replace(/[!.]^/, '');
+    normalizeBody(msg) {
+        return msg.Body.trim().toLowerCase().replace(/[!.]^/, '');
     }
     async handleMessage(person, msg) {
         let rsp = '';
@@ -69,8 +69,17 @@ class SMS {
         else if (person.context == types_1.PersonContext.SCHEDULE_START) {
             rsp = await this.handleScheduleStartReply(msg, person);
         }
-        else if (person.context == types_1.PersonContext.SCHEDULE_AWAY) {
-            rsp = await this.handleScheduleAwayReply(msg, person);
+        else if (person.context == types_1.PersonContext.SCHEDULE_AWAY_DAYS) {
+            rsp = await this.handleScheduleAwayDaysReply(msg, person);
+        }
+        else if (person.context == types_1.PersonContext.SCHEDULE_AWAY_FULL) {
+            rsp = await this.handleScheduleAwayFullReply(msg, person);
+        }
+        else if (person.context == types_1.PersonContext.SCHEDULE_AWAY_TIME) {
+            rsp = await this.handleScheduleAwayTimeReply(msg, person);
+        }
+        else if (person.context == types_1.PersonContext.SCHEDULE_AWAY_CONFIRM) {
+            rsp = await this.handleScheduleAwayConfirmReply(msg, person);
         }
         else if (person.status == 'backup') {
             rsp = await this.handleBackupMessage(msg, person);
@@ -81,7 +90,7 @@ class SMS {
         return rsp;
     }
     async handleBackupMessage(msg, backup) {
-        let sms = this.normalizedBody(msg);
+        let sms = this.normalizeBody(msg);
         let namesRegex = await this.getNamesRegex();
         let announceRegex = this.getAnnounceRegex();
         let backupRegex = await this.getBackupRegex();
@@ -105,7 +114,11 @@ class SMS {
             rsp = await this.reassignBackup(msg);
         }
         else if (backup.context == types_1.PersonContext.CHAT && backup.chatContext) {
-            await this.sendMessage(backup.chatContext, msg.Body);
+            let media = await this.checkForMedia(msg, backup);
+            if (msg.Body == '') {
+                msg.Body = '📷';
+            }
+            await this.sendMessage(backup.chatContext, msg.Body, media);
         }
         else {
             rsp = `Sorry, I didn't understand that command.`;
@@ -128,7 +141,7 @@ class SMS {
         }
     }
     async handleAssignmentReply(msg, person) {
-        let sms = this.normalizedBody(msg);
+        let sms = this.normalizeBody(msg);
         if (!person.assignment) {
             throw new Error(`${person.name} replied in assignment context without an assignment`);
         }
@@ -157,38 +170,90 @@ class SMS {
         }
     }
     async handleScheduleStartReply(msg, person) {
-        let sms = msg.Body.trim().toLocaleLowerCase();
+        let sms = this.normalizeBody(msg);
         let rsp = '';
-        if (sms == 'y') {
-            person.context = types_1.PersonContext.SCHEDULE_AWAY;
-            rsp = 'Which days will you be away this week? [reply Mon, Tue or 6/17]';
+        if (SMS.yesReplies.indexOf(sms) > -1) {
+            person.context = types_1.PersonContext.SCHEDULE_AWAY_DAYS;
+            rsp = 'Which days will you be away this week? [reply with comma-separated days: Mon, Tue or 6/17, 6/18]';
         }
-        else if (sms == 'n') {
+        else if (SMS.noReplies.indexOf(sms) > -1) {
             person.context = types_1.PersonContext.READY;
-            rsp = 'Thank you, I will send your schedule as soon as I hear back from everyone.';
-        }
-        let ready = await this.scheduleIfAllAreReady();
-        if (ready) {
-            rsp = '';
+            rsp = await this.scheduleIfAllAreReady();
         }
         return rsp;
     }
-    async handleScheduleAwayReply(msg, person) {
-        let sms = msg.Body.trim();
-        let newDays = sms.split(',');
-        let existingDays = person.away.split(', ');
-        for (let day of newDays) {
+    async handleScheduleAwayDaysReply(msg, person) {
+        let sms = this.normalizeBody(msg);
+        let days = sms.split(',');
+        let isoDays = [];
+        for (let day of days) {
             let isoDay = calendar_1.default.parseDay(day);
             if (!isoDay) {
-                throw new Error(`Sorry I couldn't make sense of '${day}' (away dates must be in the future). Please try again.`);
+                return `Sorry I couldn't make sense of '${day}'. Please try again.`;
             }
-            existingDays.push(isoDay);
+            isoDays.push(isoDay);
         }
-        let awayDays = await person.updateAway(existingDays);
-        person.context = types_1.PersonContext.READY;
-        await this.sendMessage(person, `Got it, your current away days are: ${awayDays}\n\nI will send your schedule as soon as I hear back from everyone.`);
-        await this.scheduleIfAllAreReady();
-        return '';
+        let awayDays = await person.updateAway(isoDays);
+        person.context = types_1.PersonContext.SCHEDULE_AWAY_FULL;
+        return `Your current away days are: ${awayDays}\n\nWill you be away for the full day on all of those days? [Reply Y for full days or N to specify when you'll be away on each day]`;
+    }
+    async handleScheduleAwayFullReply(msg, person) {
+        let sms = this.normalizeBody(msg);
+        let rsp = '';
+        if (SMS.noReplies.indexOf(sms) > -1) {
+            person.context = types_1.PersonContext.SCHEDULE_AWAY_TIME;
+            person.scheduleDayIndex = 0;
+            rsp = this.scheduleAwayTime(person);
+        }
+        else if (SMS.yesReplies.indexOf(sms) > -1) {
+            person.context = types_1.PersonContext.READY;
+            rsp = await this.scheduleIfAllAreReady();
+        }
+        else {
+            rsp = 'Sorry, please reply Y or N.';
+        }
+        return rsp;
+    }
+    scheduleAwayTime(person) {
+        let days = person.away.split(', ');
+        let day = moment.default(days[person.scheduleDayIndex], 'YYYY-MM-DD').format('ddd M/D');
+        return `When will you be away on ${day}? [Reply AM for morning, PM for evening, or Full for the full day]`;
+    }
+    async handleScheduleAwayTimeReply(msg, person) {
+        let sms = this.normalizeBody(msg);
+        let days = person.away.split(', ');
+        if (sms == 'am' || sms == 'pm' || sms == 'full') {
+            days[person.scheduleDayIndex] += ` ${sms}`;
+            let awayDays = await person.updateAway(days);
+            person.scheduleDayIndex++;
+            if (person.scheduleDayIndex == days.length) {
+                person.context = types_1.PersonContext.SCHEDULE_AWAY_CONFIRM;
+                return `Thank you, here are your current away days: ${awayDays}\n\nDo those look right to you? [Reply Y or N]`;
+            }
+            else {
+                return this.scheduleAwayTime(person);
+            }
+        }
+        else {
+            return 'Sorry, please reply with AM, PM, or Full.';
+        }
+    }
+    async handleScheduleAwayConfirmReply(msg, person) {
+        let sms = this.normalizeBody(msg);
+        let rsp = '';
+        if (SMS.noReplies.indexOf(sms) > -1) {
+            person.context = types_1.PersonContext.SCHEDULE_START;
+            person.scheduleDayIndex = 0;
+            rsp = `Ok, let's start over. Are there any days you will be away this week? [reply Y or N]`;
+        }
+        else if (SMS.yesReplies.indexOf(sms) > -1) {
+            person.context = types_1.PersonContext.READY;
+            rsp = await this.scheduleIfAllAreReady();
+        }
+        else {
+            rsp = 'Sorry, please reply Y or N.';
+        }
+        return rsp;
     }
     async scheduleIfAllAreReady() {
         let sheets = await sheets_1.default.getInstance();
@@ -198,8 +263,9 @@ class SMS {
         if (allAreReady) {
             let calendar = await calendar_1.default.getInstance();
             calendar.scheduleTasks().then(this.scheduleSend.bind(this));
+            return '';
         }
-        return allAreReady;
+        return 'Thank you, I will send your schedule as soon as I hear back from everyone.';
     }
     async scheduleSend() {
         let sheets = await sheets_1.default.getInstance();
@@ -405,7 +471,7 @@ class SMS {
         return new RegExp(`^backup:\\s*(${names.join('|')})\\s*$`, 'msi');
     }
 }
-SMS.yesReplies = ['y', 'yes', 'yep', 'yeah', 'yea', 'yay', 'done', 'indeed', 'yessir', 'affirmative'];
+SMS.yesReplies = ['y', 'yes', 'yep', 'yeah', 'yea', 'yay', 'indeed', 'yessir', 'affirmative'];
 SMS.noReplies = ['n', 'no', 'nope', 'negative', 'nay', 'no sir', 'none'];
 exports.default = SMS;
 //# sourceMappingURL=sms.js.map
