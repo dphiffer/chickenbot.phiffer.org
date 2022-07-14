@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -6,6 +29,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = __importDefault(require("../app"));
 const types_1 = require("../types");
 const twilio_1 = require("twilio");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const axios_1 = __importDefault(require("axios"));
+const moment = __importStar(require("moment-timezone"));
 const twilio_2 = __importDefault(require("twilio"));
 const sheets_1 = __importDefault(require("./sheets"));
 const calendar_1 = __importDefault(require("./calendar"));
@@ -194,9 +221,61 @@ class SMS {
     async relayToBackup(msg, person) {
         let sheets = await sheets_1.default.getInstance();
         let backup = await sheets.currentBackup();
+        let media = await this.checkForMedia(msg, person);
         if (backup) {
-            await this.sendMessage(backup, `${person.name}: ${msg.Body}`);
+            await this.sendMessage(backup, `${person.name}: ${msg.Body}`, media);
         }
+    }
+    checkForMedia(msg, person) {
+        if (!msg.NumMedia || !msg.NumMedia.match(/^\d+$/)) {
+            throw new Error('NumMedia is not assigned to msg');
+        }
+        let count = parseInt(msg.NumMedia);
+        let promises = [];
+        for (let i = 0; i < count; i++) {
+            promises.push(this.downloadMedia(msg, person, i));
+        }
+        return Promise.all(promises);
+    }
+    downloadMedia(msg, person, num) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                let root = path_1.default.dirname(path_1.default.dirname(__dirname));
+                let date = moment.default().format(`YYYY-MM-DD`);
+                let ext = '';
+                if (msg[`MediaContentType${num}`] == 'image/jpeg') {
+                    ext = 'jpg';
+                }
+                else if (msg[`MediaContentType${num}`] == 'image/gif') {
+                    ext = 'gif';
+                }
+                else if (msg[`MediaContentType${num}`] == 'image/png') {
+                    ext = 'png';
+                }
+                else {
+                    throw new Error(`Unexpected image content-type: ${msg[`MediaContentType${num}`]}`);
+                }
+                let fileNum = 0;
+                let filename = `${root}/public/media/${date}-${fileNum}.${ext}`;
+                while (fs_1.default.existsSync(filename)) {
+                    fileNum++;
+                    filename = `${root}/public/media/${date}-${fileNum}.${ext}`;
+                }
+                let publicPath = `/media/${date}-${fileNum}.${ext}`;
+                let response = await (0, axios_1.default)({
+                    method: 'GET',
+                    url: msg[`MediaUrl${num}`],
+                    responseType: 'stream'
+                });
+                const pipe = response.data.pipe(fs_1.default.createWriteStream(filename));
+                pipe.on('finish', () => {
+                    resolve(`${SMS.config.serverUrl}${publicPath}`);
+                });
+            }
+            catch (err) {
+                reject(err);
+            }
+        });
     }
     async relayErrorToBackup(msg, person, error) {
         msg.Body = `${person.name}: ${msg.Body}\n${error.message}`;
@@ -246,12 +325,13 @@ class SMS {
         }
         return person;
     }
-    async sendMessage(person, body) {
+    async sendMessage(person, body, media = []) {
         app_1.default.log.info(`SMS to ${person.name}: ${body}`);
         await this.twilio.messages.create({
             from: this.phone,
             to: person.phone,
-            body: body
+            body: body,
+            mediaUrl: media
         });
     }
     messageResponse(reply, response) {

@@ -1,8 +1,7 @@
 {
     "server": {
         "port": 3000,
-        "host": "0.0.0.0",
-        "url": "http://localhost:3000/"
+        "host": "0.0.0.0"
     },
     "logger": {
         "transport": {
@@ -22,7 +21,8 @@
     "twilio": {
         "accountSid": "<Twilio account SID from console.twilio.com>",
         "authToken": "<Twilio account auth token from console.twilio.com>",
-        "phone": "+15185551212"
+        "phone": "+15185551212",
+        "serverUrl": "http://localhost:3000/"
     },
     "calendar": {
         "timezone": "America/New_York",

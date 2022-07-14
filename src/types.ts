@@ -22,6 +22,7 @@ interface SMSConfig {
     accountSid: string;
     authToken: string;
     phone: string;
+    serverUrl: string;
 }
 
 interface CalendarConfig {

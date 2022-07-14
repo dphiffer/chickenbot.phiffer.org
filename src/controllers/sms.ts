@@ -3,6 +3,10 @@ import app from '../app';
 import { FastifyReply } from 'fastify';
 import { SMSConfig, IncomingMessage, PersonContext } from '../types';
 import { twiml } from 'twilio';
+import fs from 'fs';
+import path from 'path';
+import axios from 'axios';
+import * as moment from 'moment-timezone';
 
 import twilio from 'twilio';
 import Sheets from './sheets';
@@ -207,9 +211,59 @@ class SMS {
     async relayToBackup(msg: IncomingMessage, person: Person) {
         let sheets = await Sheets.getInstance();
         let backup = await sheets.currentBackup();
+        let media = await this.checkForMedia(msg, person);
         if (backup) {
-            await this.sendMessage(backup, `${person.name}: ${msg.Body}`);
+            await this.sendMessage(backup, `${person.name}: ${msg.Body}`, media);
         }
+    }
+
+    checkForMedia(msg: IncomingMessage, person: Person): Promise<string[]> {
+        if (!msg.NumMedia || !msg.NumMedia.match(/^\d+$/)) {
+            throw new Error('NumMedia is not assigned to msg');
+        }
+        let count = parseInt(msg.NumMedia);
+        let promises = [];
+        for (let i = 0; i < count; i++) {
+            promises.push(this.downloadMedia(msg, person, i));
+        }
+        return Promise.all(promises);
+    }
+
+    downloadMedia(msg: IncomingMessage, person: Person, num: number): Promise<string> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                let root = path.dirname(path.dirname(__dirname));
+                let date = moment.default().format(`YYYY-MM-DD`);
+                let ext = '';
+                if (msg[`MediaContentType${num}`] == 'image/jpeg') {
+                    ext = 'jpg';
+                } else if (msg[`MediaContentType${num}`] == 'image/gif') {
+                    ext = 'gif';
+                } else if (msg[`MediaContentType${num}`] == 'image/png') {
+                    ext = 'png';
+                } else {
+                    throw new Error(`Unexpected image content-type: ${msg[`MediaContentType${num}`]}`);
+                }
+                let fileNum = 0;
+                let filename = `${root}/public/media/${date}-${fileNum}.${ext}`;
+                while (fs.existsSync(filename)) {
+                    fileNum++;
+                    filename = `${root}/public/media/${date}-${fileNum}.${ext}`;
+                }
+                let publicPath = `/media/${date}-${fileNum}.${ext}`;
+                let response = await axios({
+                    method: 'GET',
+                    url: msg[`MediaUrl${num}`],
+                    responseType: 'stream'
+                });
+                const pipe = response.data.pipe(fs.createWriteStream(filename));
+                pipe.on('finish', () => {
+                    resolve(`${SMS.config.serverUrl}${publicPath}`);
+                });
+            } catch (err) {
+                reject(err);
+            }
+        });
     }
 
     async relayErrorToBackup(msg: IncomingMessage, person: Person, error: Error) {
@@ -264,12 +318,13 @@ class SMS {
         return person;
     }
 
-    async sendMessage(person: Person, body: string) {
+    async sendMessage(person: Person, body: string, media: string[] = []) {
         app.log.info(`SMS to ${person.name}: ${body}`);
         await this.twilio.messages.create({
             from: this.phone,
             to: person.phone,
-            body: body
+            body: body,
+            mediaUrl: media
         });
     }
 
