@@ -130,7 +130,7 @@ class Person {
             }
             this.chatContext = null;
             this.contextTimeout = null;
-        }, 60 * 1000);
+        }, 60 * 60 * 1000);
     }
 }
 exports.default = Person;
