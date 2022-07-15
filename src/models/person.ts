@@ -74,7 +74,7 @@ class Person {
 			}
 		}
 		return awayDays
-			.map((date) => {
+			.map(date => {
 				let suffix = '';
 				if (date.match(/ am$/)) {
 					date = date.replace(/ am$/, '');

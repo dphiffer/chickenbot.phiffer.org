@@ -121,7 +121,7 @@ class Calendar {
 	async setupQueue() {
 		let sheets = await Sheets.getInstance();
 		let people = sheets.getActivePeople();
-		this.queue = people.map((p) => p.name);
+		this.queue = people.map(p => p.name);
 		this.queue.sort(() => Math.random() - 0.5);
 		this.index = 0;
 	}
@@ -131,7 +131,7 @@ class Calendar {
 		let fmt = 'YYYY-MM-DD';
 		for (let assignment of this.assignments) {
 			let date = moment.default(assignment.date, 'M/D');
-			let [task] = sheets.tasks.filter((t) => t.name == assignment.task);
+			let [task] = sheets.tasks.filter(t => t.name == assignment.task);
 			if (task && (!task.lastRun || task.lastRun < date.format(fmt))) {
 				task.lastRun = date.format(fmt);
 				task.lastPerson = assignment.person;
@@ -204,7 +204,7 @@ class Calendar {
 	) {
 		let name = this.queue[this.index];
 		this.index = (this.index + 1) % this.queue.length;
-		let [person] = people.filter((p) => p.name == name);
+		let [person] = people.filter(p => p.name == name);
 		if (iterations == people.length) {
 			let sheets = await Sheets.getInstance();
 			let backup = await sheets.currentBackup();

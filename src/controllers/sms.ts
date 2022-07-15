@@ -117,8 +117,8 @@ class SMS {
 		let sheets = await Sheets.getInstance();
 		let people = sheets.getActivePeople();
 		for (let assignment of due) {
-			let [person] = people.filter((p) => p.name == assignment.person);
-			let [task] = sheets.tasks.filter((t) => t.name == assignment.task);
+			let [person] = people.filter(p => p.name == assignment.person);
+			let [task] = sheets.tasks.filter(t => t.name == assignment.task);
 			if (!person || !task) {
 				continue;
 			}
@@ -267,7 +267,7 @@ class SMS {
 		let sheets = await Sheets.getInstance();
 		let activePeople = sheets.getActivePeople();
 		let readyPeople = activePeople.filter(
-			(p) => p.context == PersonContext.READY
+			p => p.context == PersonContext.READY
 		);
 		let allAreReady = activePeople.length == readyPeople.length;
 		if (allAreReady) {
@@ -432,7 +432,7 @@ class SMS {
 		}
 		let name = match[1];
 		let body = match[2];
-		let [relayTo] = sheets.people.filter((p) => p.name == name);
+		let [relayTo] = sheets.people.filter(p => p.name == name);
 		if (!relayTo) {
 			throw new Error('Could not find person to relay message to');
 		}
@@ -457,7 +457,7 @@ class SMS {
 		}
 		let name = match[1];
 		let [newBackup] = sheets.people.filter(
-			(p) => p.name.toLowerCase() == name.toLowerCase()
+			p => p.name.toLowerCase() == name.toLowerCase()
 		);
 		await currBackup.updateStatus('active');
 		await newBackup.updateStatus('backup');
@@ -473,7 +473,7 @@ class SMS {
 		if (msg.AccountSid !== SMS.config.accountSid) {
 			throw new Error('Whoops, Twilio needs to be configured.');
 		}
-		let [person] = sheets.people.filter((p) => msg.From == p.phone);
+		let [person] = sheets.people.filter(p => msg.From == p.phone);
 		if (!person) {
 			throw new Error('Sorry, I don’t know who you are.');
 		}
@@ -499,7 +499,7 @@ class SMS {
 
 	async getNamesRegex() {
 		let sheets = await Sheets.getInstance();
-		let names = sheets.getActivePeople().map((p) => p.name);
+		let names = sheets.getActivePeople().map(p => p.name);
 		return new RegExp(`^(${names.join('|')}):\\s*(.+)$`, 'msi');
 	}
 
@@ -509,7 +509,7 @@ class SMS {
 
 	async getBackupRegex() {
 		let sheets = await Sheets.getInstance();
-		let names = sheets.getActivePeople().map((p) => p.name);
+		let names = sheets.getActivePeople().map(p => p.name);
 		return new RegExp(`^backup:\\s*(${names.join('|')})\\s*$`, 'msi');
 	}
 }
