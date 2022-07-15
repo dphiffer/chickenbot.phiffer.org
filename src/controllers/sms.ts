@@ -23,12 +23,10 @@ class SMS {
 		'yep',
 		'yeah',
 		'yea',
-		'yay',
 		'indeed',
-		'yessir',
 		'affirmative',
 	];
-	static noReplies = ['n', 'no', 'nope', 'negative', 'nay', 'no sir', 'none'];
+	static noReplies = ['n', 'no', 'nope', 'nay', 'negative'];
 
 	twilio: twilio.Twilio;
 	phone: string;
@@ -89,7 +87,9 @@ class SMS {
 		let announceRegex = this.getAnnounceRegex();
 		let backupRegex = await this.getBackupRegex();
 		let rsp = '';
-		if (sms == 'schedule') {
+		if (msg.Body.trim().toLowerCase() === 'schedule!') {
+			await this.scheduleQuick();
+		} else if (sms == 'schedule') {
 			await this.scheduleStart();
 		} else if (sms == 'announce') {
 			await this.setAnnounceContext(backup);
@@ -164,6 +164,15 @@ class SMS {
 				'It is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]'
 			);
 		}
+	}
+
+	async scheduleQuick() {
+		let sheets = await Sheets.getInstance();
+		let people = sheets.getActivePeople();
+		for (let person of people) {
+			person.context = PersonContext.READY;
+		}
+		await this.scheduleIfAllAreReady();
 	}
 
 	async handleScheduleStartReply(msg: IncomingMessage, person: Person) {
@@ -495,7 +504,7 @@ class SMS {
 	}
 
 	getAnnounceRegex() {
-		return /announce:\s*(.+)$/msi;
+		return /announce:\s*(.+)$/ims;
 	}
 
 	async getBackupRegex() {

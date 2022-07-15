@@ -95,7 +95,10 @@ class SMS {
         let announceRegex = this.getAnnounceRegex();
         let backupRegex = await this.getBackupRegex();
         let rsp = '';
-        if (sms == 'schedule') {
+        if (msg.Body.trim().toLowerCase() === 'schedule!') {
+            await this.scheduleQuick();
+        }
+        else if (sms == 'schedule') {
             await this.scheduleStart();
         }
         else if (sms == 'announce') {
@@ -168,6 +171,14 @@ class SMS {
             person.context = types_1.PersonContext.SCHEDULE_START;
             await this.sendMessage(person, 'It is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]');
         }
+    }
+    async scheduleQuick() {
+        let sheets = await sheets_1.default.getInstance();
+        let people = sheets.getActivePeople();
+        for (let person of people) {
+            person.context = types_1.PersonContext.READY;
+        }
+        await this.scheduleIfAllAreReady();
     }
     async handleScheduleStartReply(msg, person) {
         let sms = this.normalizeBody(msg);
@@ -467,7 +478,7 @@ class SMS {
         return new RegExp(`^(${names.join('|')}):\\s*(.+)$`, 'msi');
     }
     getAnnounceRegex() {
-        return /announce:\s*(.+)$/msi;
+        return /announce:\s*(.+)$/ims;
     }
     async getBackupRegex() {
         let sheets = await sheets_1.default.getInstance();
@@ -481,11 +492,9 @@ SMS.yesReplies = [
     'yep',
     'yeah',
     'yea',
-    'yay',
     'indeed',
-    'yessir',
     'affirmative',
 ];
-SMS.noReplies = ['n', 'no', 'nope', 'negative', 'nay', 'no sir', 'none'];
+SMS.noReplies = ['n', 'no', 'nope', 'nay', 'negative'];
 exports.default = SMS;
 //# sourceMappingURL=sms.js.map
