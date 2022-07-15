@@ -2,7 +2,7 @@
 
 *Chicken care task rotation using a Google Sheet and Twilio*
 
-This software supports a small cohort of neighbors who share responsibility caring for a flock of chickens. It is somewhat flexible, but it does make some assumptions. There must be at least two people involved, tasks can't be more frequent than once per day, the designated backup person is assumed to understand they're the backstop for any given task.
+This software supports a small cohort of neighbors who share responsibility caring for a flock of chickens. It is somewhat flexible, but it does make some assumptions. There must be at least two people involved, tasks can't be more frequent than once per day, the designated backup person is assumed to understand they're the backstop for any given task. The only known instance of the bot is running at [chickenbot.phiffer.org](https://chickenbot.phiffer.org/).
 
 ## Google Sheet
 
@@ -44,7 +44,7 @@ Add the names and phone numbers for people who will be caring for the chickens.
 * __name:__ the person's name
 * __phone:__ the person's phone number, formatting is flexible (e.g., `518-555-1212`)
 * __status:__ assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactive`)
-* __away:__ a list of days the person is away, as a comma-separated list of [ISO 8601 formatted dates](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) (e.g., `2022-06-22, 2022-07-01`)
+* __away:__ a list of days the person is away, as a comma-separated list of [ISO 8601 formatted dates](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) (e.g., `2022-06-22, 2022-07-01`) or a list of dates with modifiers (am/pm/full) for when people are away for part of a day (e.g., `2022-07-15 full, 2022-07-16 am`)
 
 ## Google auth
 
@@ -54,12 +54,12 @@ Add the names and phone numbers for people who will be caring for the chickens.
 ## Configuration
 
 1. Copy `config/config.json.example` to `config/config.json`.
-2. Set `url` to the public facing server URL for chickenbot.
-3. Set the `timezone` and `latitude`/`longitude` coordinates (used for calculating sunset times). You can find coordinate values in the URL from [Google Maps](https://maps.google.com/).
-4. Set `chickenbotPhone` as the phone number for the bot (from Twilio).
-5. Configure the Google Sheet ID from its URL, and set the filename for the service key json file (saved in the `config` folder).
-6. Generate a webhook shared secret at the command line with `openssl rand -hex 40` and configure that value in `webhookSecret`.
-7. Configure the Twilio SID and auth token from the [Twilio Console](https://console.twilio.com/).
+2. Configure the Google Sheet ID from its URL, and set the filename for the service key json file (saved in the `config` folder).
+3. Generate a webhook shared secret at the command line with `openssl rand -hex 40` and configure that value in `webhookSecret`.
+4. Configure the Twilio SID and auth token from the [Twilio Console](https://console.twilio.com/).
+5. Set `phone` as the phone number for the bot (from Twilio).
+6. Set `serverUrl` to the public facing server URL for chickenbot (used for sending media MMS messages).
+7. Set the `timezone`, `latitude`, and `longitude` values (used for calculating sunset times). You can find coordinate values in the URL from [Google Maps](https://maps.google.com/).
 
 ## Install dependencies
 
@@ -71,9 +71,9 @@ npm install
 
 * `npm start` to run the server.
 * `npm run dev` to run the server with `nodemon` (auto-restart after a code change)
-* `npm run build` to build TypeScript in `src` to JavaScript in `dist`
 * `npm run watch` to auto-compile TypeScript updates
 * `npm run ngrok` to start an [ngrok](https://ngrok.com/) session
+* `npm run build` to compile TypeScript from `src` into JavaScript in `dist` one time
 
 ## Setup Twilio webhook
 
@@ -81,11 +81,11 @@ Configure the phone number to send webhook requests to the chickenbot server for
 
 ## Setup Google webhook
 
-1. From the Google Sheet, go to the menu Extensions → Apps Script
-2. Paste the code from the file `webhook.gs`
-3. Replace the `url` and `secret` variables, where with your own values (`url` should link to the `/update` path e.g., `https://chickenbot.example.com/update`)
-4. Configure `sendWebhook` from the `Head` deployment `from Spreadsheet` to run `on edit`
-5. You will need to click through a scary looking "app security warning" to grant access to your spreadsheets (advanced → open unsafe app)
+1. From the Google Sheet, go to the menu Extensions → Apps Script.
+2. Paste the code from the file `webhook.gs`.
+3. Replace the `url` and `secret` variables with your own values (`url` should link to the `/update` path e.g., `https://chickenbot.example.com/update`, `secret` should be the same as `webhookSecret` in the config).
+4. Configure `sendWebhook` from the `Head` deployment `from Spreadsheet` to run `on edit`.
+5. You will need to click through a scary looking "app security warning" to grant access to your spreadsheets (advanced → open unsafe app).
 
 ## Designated backup commands
 
