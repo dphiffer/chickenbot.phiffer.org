@@ -8,7 +8,7 @@ const fs_1 = require("fs");
 const calendar_1 = __importDefault(require("./calendar"));
 const person_1 = __importDefault(require("../models/person"));
 const task_1 = __importDefault(require("../models/task"));
-const log_1 = require("../log");
+const app_1 = __importDefault(require("../app"));
 class Sheets {
     constructor() {
         this.people = [];
@@ -34,12 +34,12 @@ class Sheets {
         let creds = JSON.parse(credsJson);
         await this.doc.useServiceAccountAuth(creds);
         await this.doc.loadInfo();
-        (0, log_1.log)(`Loading '${this.doc.title}'`);
+        app_1.default.log.info(`Loading '${this.doc.title}'`);
         let people = await this.loadPeople();
         let active = this.getActivePeople();
-        (0, log_1.log)(`Loaded ${people.length} people (${active.length} are active)`);
+        app_1.default.log.info(`Loaded ${people.length} people (${active.length} are active)`);
         let tasks = await this.loadTasks();
-        (0, log_1.log)(`Loaded ${tasks.length} tasks`);
+        app_1.default.log.info(`Loaded ${tasks.length} tasks`);
         return this;
     }
     async loadPeople() {
@@ -70,7 +70,7 @@ class Sheets {
         assignment.time = data.time;
         assignment.person = data.person;
         assignment.status = data.status;
-        (0, log_1.log)(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
+        app_1.default.log.info(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
         return assignment;
     }
     validateSecret(data) {

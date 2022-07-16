@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import Calendar from './calendar';
 import Person from '../models/person';
 import Task from '../models/task';
-import { log } from '../log';
+import app from '../app';
 
 class Sheets {
 	private static config: SheetsConfig;
@@ -42,12 +42,14 @@ class Sheets {
 		let creds = JSON.parse(credsJson);
 		await this.doc.useServiceAccountAuth(creds);
 		await this.doc.loadInfo();
-		log(`Loading '${this.doc.title}'`);
+		app.log.info(`Loading '${this.doc.title}'`);
 		let people = await this.loadPeople();
 		let active = this.getActivePeople();
-		log(`Loaded ${people.length} people (${active.length} are active)`);
+		app.log.info(
+			`Loaded ${people.length} people (${active.length} are active)`
+		);
 		let tasks = await this.loadTasks();
-		log(`Loaded ${tasks.length} tasks`);
+		app.log.info(`Loaded ${tasks.length} tasks`);
 		return this;
 	}
 
@@ -81,7 +83,9 @@ class Sheets {
 		assignment.time = data.time;
 		assignment.person = data.person;
 		assignment.status = data.status;
-		log(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
+		app.log.info(
+			`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`
+		);
 		return assignment;
 	}
 

@@ -36,7 +36,7 @@ const moment = __importStar(require("moment-timezone"));
 const sheets_1 = __importDefault(require("./sheets"));
 const calendar_1 = __importDefault(require("./calendar"));
 const person_1 = __importDefault(require("../models/person"));
-const log_1 = require("../log");
+const app_1 = __importDefault(require("../app"));
 class SMS {
     constructor() {
         this.twilio = (0, twilio_2.default)(SMS.config.accountSid, SMS.config.authToken);
@@ -458,7 +458,7 @@ class SMS {
         return person;
     }
     async sendMessage(person, body, media = []) {
-        (0, log_1.log)(`SMS to ${person.name}: ${body}`);
+        app_1.default.log.info(`SMS to ${person.name}: ${body}`);
         await this.twilio.messages.create({
             from: this.phone,
             to: person.phone,

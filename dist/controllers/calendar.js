@@ -31,7 +31,7 @@ const suntimes = __importStar(require("suntimes"));
 const sheets_1 = __importDefault(require("./sheets"));
 const assignment_1 = __importDefault(require("../models/assignment"));
 const sms_1 = __importDefault(require("./sms"));
-const log_1 = require("../log");
+const app_1 = __importDefault(require("../app"));
 class Calendar {
     constructor() {
         this.assignments = [];
@@ -65,7 +65,6 @@ class Calendar {
                 continue;
             }
             if (moment.default(input, format).isValid()) {
-                console.log(format);
                 let day = moment.default(input, format);
                 if (day.format('YYYY-MM-DD') > today) {
                     return day.format('YYYY-MM-DD');
@@ -88,11 +87,11 @@ class Calendar {
     }
     async setup() {
         let upcoming = await this.loadAssignments('Upcoming');
-        (0, log_1.log)(`Loaded ${upcoming.length} upcoming assignments`);
+        app_1.default.log.info(`Loaded ${upcoming.length} upcoming assignments`);
         let archived = await this.loadAssignments('Archive');
-        (0, log_1.log)(`Loaded ${archived.length} archived assignments`);
+        app_1.default.log.info(`Loaded ${archived.length} archived assignments`);
         this.markTaskDates();
-        (0, log_1.log)('Setting up assignment check interval');
+        app_1.default.log.info('Setting up assignment check interval');
         setInterval(async () => {
             await this.checkAssignments();
         }, 60 * 1000);
@@ -287,7 +286,7 @@ class Calendar {
         return people;
     }
     async checkAssignments() {
-        (0, log_1.log)('Checking assignments');
+        app_1.default.log.info('Checking assignments');
         let sheets = await sheets_1.default.getInstance();
         let assignmentsDue = [];
         let today = moment.default().format('YYYY-MM-DD');
@@ -300,7 +299,7 @@ class Calendar {
             if (dateTime.format('YYYY-MM-DD') == today &&
                 dateTime.format('HH:mm:ss') <= now) {
                 assignmentsDue.push(assignment);
-                (0, log_1.log)(`due: ${assignment.task.toLowerCase()}`);
+                app_1.default.log.info(`due: ${assignment.task.toLowerCase()}`);
             }
         }
         if (assignmentsDue.length > 0) {

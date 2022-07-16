@@ -6,7 +6,7 @@ import Person from '../models/person';
 import Task from '../models/task';
 import Assignment from '../models/assignment';
 import SMS from './sms';
-import { log } from '../log';
+import app from '../app';
 
 class Calendar {
 	private static config: CalendarConfig;
@@ -53,7 +53,6 @@ class Calendar {
 				continue;
 			}
 			if (moment.default(input, format).isValid()) {
-				console.log(format);
 				let day = moment.default(input, format);
 				if (day.format('YYYY-MM-DD') > today) {
 					return day.format('YYYY-MM-DD');
@@ -77,11 +76,11 @@ class Calendar {
 
 	async setup() {
 		let upcoming = await this.loadAssignments('Upcoming');
-		log(`Loaded ${upcoming.length} upcoming assignments`);
+		app.log.info(`Loaded ${upcoming.length} upcoming assignments`);
 		let archived = await this.loadAssignments('Archive');
-		log(`Loaded ${archived.length} archived assignments`);
+		app.log.info(`Loaded ${archived.length} archived assignments`);
 		this.markTaskDates();
-		log('Setting up assignment check interval');
+		app.log.info('Setting up assignment check interval');
 		setInterval(async () => {
 			await this.checkAssignments();
 		}, 60 * 1000);
@@ -318,7 +317,7 @@ class Calendar {
 	}
 
 	async checkAssignments() {
-		log('Checking assignments');
+		app.log.info('Checking assignments');
 		let sheets = await Sheets.getInstance();
 		let assignmentsDue = [];
 		let today = moment.default().format('YYYY-MM-DD');
@@ -336,7 +335,7 @@ class Calendar {
 				dateTime.format('HH:mm:ss') <= now
 			) {
 				assignmentsDue.push(assignment);
-				log(`due: ${assignment.task.toLowerCase()}`);
+				app.log.info(`due: ${assignment.task.toLowerCase()}`);
 			}
 		}
 		if (assignmentsDue.length > 0) {

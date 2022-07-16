@@ -4,13 +4,14 @@ import moment from 'moment-timezone';
 import Sheets from '../controllers/sheets';
 import Assignment from './assignment';
 import { clearTimeout } from 'timers';
-import { log } from '../log';
+import app from '../app';
 
 class Person {
 	name: string;
 	phone: string;
 	status: string;
 	away: string;
+
 	schedule: null | string = null;
 	assignment: null | Assignment = null;
 	context: PersonContext = PersonContext.READY;
@@ -128,7 +129,9 @@ class Person {
 		context: PersonContext,
 		chatContext: null | Person = null
 	) {
-		log(`Setting ${this.name}'s temporary context to '${context}'`);
+		app.log.info(
+			`Setting ${this.name}'s temporary context to '${context}'`
+		);
 		this.context = context;
 		if (chatContext) {
 			this.chatContext = chatContext;
@@ -137,7 +140,9 @@ class Person {
 			clearTimeout(this.contextTimeout);
 		}
 		this.contextTimeout = setTimeout(() => {
-			log(`Resetting ${this.name}'s context to '${PersonContext.READY}'`);
+			app.log.info(
+				`Resetting ${this.name}'s context to '${PersonContext.READY}'`
+			);
 			if (this.context == context) {
 				this.context = PersonContext.READY;
 			}

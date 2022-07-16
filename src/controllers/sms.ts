@@ -11,7 +11,7 @@ import Sheets from './sheets';
 import Calendar from './calendar';
 import Person from '../models/person';
 import Assignment from '../models/assignment';
-import { log } from '../log';
+import app from '../app';
 
 class SMS {
 	private static config: SMSConfig;
@@ -480,7 +480,7 @@ class SMS {
 	}
 
 	async sendMessage(person: Person, body: string, media: string[] = []) {
-		log(`SMS to ${person.name}: ${body}`);
+		app.log.info(`SMS to ${person.name}: ${body}`);
 		await this.twilio.messages.create({
 			from: this.phone,
 			to: person.phone,
