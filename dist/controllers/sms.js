@@ -279,13 +279,26 @@ class SMS {
     }
     async scheduleIfAllAreReady(person = null) {
         let sheets = await sheets_1.default.getInstance();
-        let activePeople = sheets.getActivePeople();
-        let readyPeople = activePeople.filter(p => p.context == types_1.PersonContext.READY);
-        let allAreReady = activePeople.length == readyPeople.length;
-        if (person) {
+        let active = sheets.getActivePeople();
+        let notReady = [];
+        active.forEach(p => {
+            if (p.context != types_1.PersonContext.READY) {
+                if (p.status == 'backup') {
+                    notReady.push('you');
+                }
+                else {
+                    notReady.push(p.name);
+                }
+            }
+        });
+        let allAreReady = notReady.length == 0;
+        if (person && person.status != 'backup') {
+            let waiting = allAreReady
+                ? ''
+                : ` Still waiting on: ${notReady.join(', ')}`;
             let backup = await sheets.currentBackup();
             if (backup) {
-                this.sendMessage(backup, `[${person.name} is ready to schedule tasks]`);
+                this.sendMessage(backup, `${person.name} is ready to schedule tasks.${waiting}`);
             }
         }
         if (allAreReady) {
