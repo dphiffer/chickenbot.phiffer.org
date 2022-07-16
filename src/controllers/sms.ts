@@ -160,7 +160,7 @@ class SMS {
 			person.context = PersonContext.SCHEDULE_START;
 			await this.sendMessage(
 				person,
-				'It is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]'
+				`Hi ${person.name}, it is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]`
 			);
 		}
 	}
@@ -184,6 +184,8 @@ class SMS {
 		} else if (SMS.noReplies.indexOf(sms) > -1) {
 			person.context = PersonContext.READY;
 			rsp = await this.scheduleIfAllAreReady();
+		} else {
+			rsp = 'Sorry, please reply with Y or N.';
 		}
 		return rsp;
 	}
@@ -195,7 +197,7 @@ class SMS {
 		for (let day of days) {
 			let isoDay = Calendar.parseDay(day);
 			if (!isoDay) {
-				return `Sorry I couldn't make sense of '${day}'. Please try again.`;
+				return `Sorry I couldn't make sense of '${day.trim()}'. Please try again.`;
 			}
 			isoDays.push(isoDay);
 		}

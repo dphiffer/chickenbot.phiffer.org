@@ -169,7 +169,7 @@ class SMS {
         let people = sheets.getActivePeople();
         for (let person of people) {
             person.context = types_1.PersonContext.SCHEDULE_START;
-            await this.sendMessage(person, 'It is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]');
+            await this.sendMessage(person, `Hi ${person.name}, it is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]`);
         }
     }
     async scheduleQuick() {
@@ -192,6 +192,9 @@ class SMS {
             person.context = types_1.PersonContext.READY;
             rsp = await this.scheduleIfAllAreReady();
         }
+        else {
+            rsp = 'Sorry, please reply with Y or N.';
+        }
         return rsp;
     }
     async handleScheduleAwayDaysReply(msg, person) {
@@ -201,7 +204,7 @@ class SMS {
         for (let day of days) {
             let isoDay = calendar_1.default.parseDay(day);
             if (!isoDay) {
-                return `Sorry I couldn't make sense of '${day}'. Please try again.`;
+                return `Sorry I couldn't make sense of '${day.trim()}'. Please try again.`;
             }
             isoDays.push(isoDay);
         }
