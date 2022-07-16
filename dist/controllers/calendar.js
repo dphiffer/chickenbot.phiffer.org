@@ -28,10 +28,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const moment = __importStar(require("moment-timezone"));
 const suntimes = __importStar(require("suntimes"));
-const app_1 = __importDefault(require("../app"));
 const sheets_1 = __importDefault(require("./sheets"));
 const assignment_1 = __importDefault(require("../models/assignment"));
 const sms_1 = __importDefault(require("./sms"));
+const log_1 = require("../log");
 class Calendar {
     constructor() {
         this.assignments = [];
@@ -57,7 +57,15 @@ class Calendar {
         input = input.trim();
         let formats = ['dd', 'ddd', 'dddd', 'M/D', 'YYYY-MM-DD'];
         for (let format of formats) {
+            if (format == 'M/D' && input.indexOf('/') == -1) {
+                continue;
+            }
+            else if (format == 'YYYY-MM-DD' &&
+                !input.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                continue;
+            }
             if (moment.default(input, format).isValid()) {
+                console.log(format);
                 let day = moment.default(input, format);
                 if (day.format('YYYY-MM-DD') > today) {
                     return day.format('YYYY-MM-DD');
@@ -80,11 +88,11 @@ class Calendar {
     }
     async setup() {
         let upcoming = await this.loadAssignments('Upcoming');
-        app_1.default.log.info(`Loaded ${upcoming.length} upcoming assignments`);
+        (0, log_1.log)(`Loaded ${upcoming.length} upcoming assignments`);
         let archived = await this.loadAssignments('Archive');
-        app_1.default.log.info(`Loaded ${archived.length} archived assignments`);
+        (0, log_1.log)(`Loaded ${archived.length} archived assignments`);
         this.markTaskDates();
-        app_1.default.log.info('Setting up assignment check interval');
+        (0, log_1.log)('Setting up assignment check interval');
         setInterval(async () => {
             await this.checkAssignments();
         }, 60 * 1000);
@@ -128,7 +136,7 @@ class Calendar {
     async setupQueue() {
         let sheets = await sheets_1.default.getInstance();
         let people = sheets.getActivePeople();
-        this.queue = people.map((p) => p.name);
+        this.queue = people.map(p => p.name);
         this.queue.sort(() => Math.random() - 0.5);
         this.index = 0;
     }
@@ -137,7 +145,7 @@ class Calendar {
         let fmt = 'YYYY-MM-DD';
         for (let assignment of this.assignments) {
             let date = moment.default(assignment.date, 'M/D');
-            let [task] = sheets.tasks.filter((t) => t.name == assignment.task);
+            let [task] = sheets.tasks.filter(t => t.name == assignment.task);
             if (task && (!task.lastRun || task.lastRun < date.format(fmt))) {
                 task.lastRun = date.format(fmt);
                 task.lastPerson = assignment.person;
@@ -195,7 +203,7 @@ class Calendar {
     async selectPerson(task, people, date, iterations = 0) {
         let name = this.queue[this.index];
         this.index = (this.index + 1) % this.queue.length;
-        let [person] = people.filter((p) => p.name == name);
+        let [person] = people.filter(p => p.name == name);
         if (iterations == people.length) {
             let sheets = await sheets_1.default.getInstance();
             let backup = await sheets.currentBackup();
@@ -279,7 +287,7 @@ class Calendar {
         return people;
     }
     async checkAssignments() {
-        app_1.default.log.info('Checking assignments');
+        (0, log_1.log)('Checking assignments');
         let sheets = await sheets_1.default.getInstance();
         let assignmentsDue = [];
         let today = moment.default().format('YYYY-MM-DD');
@@ -292,7 +300,7 @@ class Calendar {
             if (dateTime.format('YYYY-MM-DD') == today &&
                 dateTime.format('HH:mm:ss') <= now) {
                 assignmentsDue.push(assignment);
-                app_1.default.log.info(`due: ${assignment.task.toLowerCase()}`);
+                (0, log_1.log)(`due: ${assignment.task.toLowerCase()}`);
             }
         }
         if (assignmentsDue.length > 0) {

@@ -1,8 +1,8 @@
 # 🐔 chickenbot
 
-*Chicken care task rotation using a Google Sheet and Twilio*
+_Chicken care task rotation using a Google Sheet and Twilio_
 
-This software supports a small cohort of neighbors who share responsibility caring for a flock of chickens. It is somewhat flexible, but it does make some assumptions. There must be at least two people involved, tasks can't be more frequent than once per day, the designated backup person is assumed to understand they're the backstop for any given task. The only known instance of the bot is running at [chickenbot.phiffer.org](https://chickenbot.phiffer.org/).
+This software supports a small cohort of neighbors who share responsibility caring for a flock of chickens. It is somewhat flexible, but it does make some assumptions. There must be at least two people involved, tasks can't be more frequent than once per day, the designated backup person is assumed to understand they're the backstop for any given task. An instance of the bot is running at [chickenbot.phiffer.org](https://chickenbot.phiffer.org/).
 
 ## Google Sheet
 
@@ -18,33 +18,33 @@ Date and time columns need to be formatted like "6/21" and "7:16 PM" for the mat
 
 The list of tasks get assigned to all the active people involved for a given week.
 
-* __name:__ is how the task appears in the schedule
-* __question:__ gets sent in the reminder text message, i.e., `Hi [name], [question]`
-* __frequency:__ how often the task happens (`1` = every day, `7` = every week)
-* __time:__ when the reminder gets sent (e.g., `8:00 AM` or `sunset` to schedule 10 minutes after when the sun sets)
+-   **name:** is how the task appears in the schedule
+-   **question:** gets sent in the reminder text message, i.e., `Hi [name], [question]`
+-   **frequency:** how often the task happens (`1` = every day, `7` = every week)
+-   **time:** when the reminder gets sent (e.g., `8:00 AM` or `sunset` to schedule 10 minutes after when the sun sets)
 
 Example morning task:
 
-* name: Open the door
-* question: did you open the chickens’ door? Check the water? Check the food?
-* frequency: 1
-* time: 8:00 AM
+-   name: Open the door
+-   question: did you open the chickens’ door? Check the water? Check the food?
+-   frequency: 1
+-   time: 8:00 AM
 
 Example evening task:
 
-* name: Close the door
-* question: did you close the chickens’ door?
-* frequency: 1
-* time: sunset
+-   name: Close the door
+-   question: did you close the chickens’ door?
+-   frequency: 1
+-   time: sunset
 
 ## Add people
 
 Add the names and phone numbers for people who will be caring for the chickens.
 
-* __name:__ the person's name
-* __phone:__ the person's phone number, formatting is flexible (e.g., `518-555-1212`)
-* __status:__ assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactive`)
-* __away:__ a list of days the person is away, as a comma-separated list of [ISO 8601 formatted dates](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) (e.g., `2022-06-22, 2022-07-01`) or a list of dates with modifiers (am/pm/full) for when people are away for part of a day (e.g., `2022-07-15 full, 2022-07-16 am`)
+-   **name:** the person's name
+-   **phone:** the person's phone number, formatting is flexible (e.g., `518-555-1212`)
+-   **status:** assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactive`)
+-   **away:** a list of days the person is away, as a comma-separated list of [ISO 8601 formatted dates](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) (e.g., `2022-06-22, 2022-07-01`) or a list of dates with modifiers (am/pm/full) for when people are away for part of a day (e.g., `2022-07-15 full, 2022-07-16 am`)
 
 ## Google auth
 
@@ -69,11 +69,11 @@ npm install
 
 ## Package scripts
 
-* `npm start` to run the server.
-* `npm run dev` to run the server with `nodemon` (auto-restart after a code change)
-* `npm run watch` to auto-compile TypeScript updates
-* `npm run ngrok` to start an [ngrok](https://ngrok.com/) session
-* `npm run build` to compile TypeScript from `src` into JavaScript in `dist` one time
+-   `npm start` to run the server.
+-   `npm run dev` to run the server with `nodemon` (auto-restart after a code change)
+-   `npm run watch` to auto-compile TypeScript updates
+-   `npm run ngrok` to start an [ngrok](https://ngrok.com/) session
+-   `npm run build` to compile TypeScript from `src` into JavaScript in `dist` one time
 
 ## Setup Twilio webhook
 
@@ -91,10 +91,10 @@ Configure the phone number to send webhook requests to the chickenbot server for
 
 From the designated backup phone:
 
-* Send a `schedule` SMS to the chickenbot phone number to schedule tasks for the coming week.
-* Send `announce: [message]` to relay a message to everyone (or just `announce` to announce all subsequent messages, for one hour)
-* Send `[name]: [message]` to relay a message to a particular person by name.
-* Send `backup: [name]` to reassign the designated backup to someone else.
+-   Send a `schedule` SMS to the chickenbot phone number to schedule tasks for the coming week.
+-   Send `announce: [message]` to relay a message to everyone (or just `announce` to announce all subsequent messages, for one hour)
+-   Send `[name]: [message]` to relay a message to a particular person by name.
+-   Send `backup: [name]` to reassign the designated backup to someone else.
 
 ## Scheduling tasks
 

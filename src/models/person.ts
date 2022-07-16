@@ -1,10 +1,10 @@
-import app from '../app';
 import { GoogleSpreadsheetRow } from 'google-spreadsheet';
 import { PersonContext } from '../types';
 import moment from 'moment-timezone';
 import Sheets from '../controllers/sheets';
 import Assignment from './assignment';
 import { clearTimeout } from 'timers';
+import { log } from '../log';
 
 class Person {
 	name: string;
@@ -128,9 +128,7 @@ class Person {
 		context: PersonContext,
 		chatContext: null | Person = null
 	) {
-		app.log.info(
-			`Setting ${this.name}'s temporary context to '${context}'`
-		);
+		log(`Setting ${this.name}'s temporary context to '${context}'`);
 		this.context = context;
 		if (chatContext) {
 			this.chatContext = chatContext;
@@ -139,9 +137,7 @@ class Person {
 			clearTimeout(this.contextTimeout);
 		}
 		this.contextTimeout = setTimeout(() => {
-			app.log.info(
-				`Resetting ${this.name}'s context to '${PersonContext.READY}'`
-			);
+			log(`Resetting ${this.name}'s context to '${PersonContext.READY}'`);
 			if (this.context == context) {
 				this.context = PersonContext.READY;
 			}

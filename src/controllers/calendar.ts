@@ -1,12 +1,12 @@
 import * as moment from 'moment-timezone';
 import * as suntimes from 'suntimes';
 import { CalendarConfig, PersonContext } from '../types';
-import app from '../app';
 import Sheets from './sheets';
 import Person from '../models/person';
 import Task from '../models/task';
 import Assignment from '../models/assignment';
 import SMS from './sms';
+import { log } from '../log';
 
 class Calendar {
 	private static config: CalendarConfig;
@@ -44,7 +44,16 @@ class Calendar {
 		input = input.trim();
 		let formats = ['dd', 'ddd', 'dddd', 'M/D', 'YYYY-MM-DD'];
 		for (let format of formats) {
+			if (format == 'M/D' && input.indexOf('/') == -1) {
+				continue;
+			} else if (
+				format == 'YYYY-MM-DD' &&
+				!input.match(/^\d{4}-\d{2}-\d{2}$/)
+			) {
+				continue;
+			}
 			if (moment.default(input, format).isValid()) {
+				console.log(format);
 				let day = moment.default(input, format);
 				if (day.format('YYYY-MM-DD') > today) {
 					return day.format('YYYY-MM-DD');
@@ -68,11 +77,11 @@ class Calendar {
 
 	async setup() {
 		let upcoming = await this.loadAssignments('Upcoming');
-		app.log.info(`Loaded ${upcoming.length} upcoming assignments`);
+		log(`Loaded ${upcoming.length} upcoming assignments`);
 		let archived = await this.loadAssignments('Archive');
-		app.log.info(`Loaded ${archived.length} archived assignments`);
+		log(`Loaded ${archived.length} archived assignments`);
 		this.markTaskDates();
-		app.log.info('Setting up assignment check interval');
+		log('Setting up assignment check interval');
 		setInterval(async () => {
 			await this.checkAssignments();
 		}, 60 * 1000);
@@ -309,7 +318,7 @@ class Calendar {
 	}
 
 	async checkAssignments() {
-		app.log.info('Checking assignments');
+		log('Checking assignments');
 		let sheets = await Sheets.getInstance();
 		let assignmentsDue = [];
 		let today = moment.default().format('YYYY-MM-DD');
@@ -327,7 +336,7 @@ class Calendar {
 				dateTime.format('HH:mm:ss') <= now
 			) {
 				assignmentsDue.push(assignment);
-				app.log.info(`due: ${assignment.task.toLowerCase()}`);
+				log(`due: ${assignment.task.toLowerCase()}`);
 			}
 		}
 		if (assignmentsDue.length > 0) {

@@ -5,10 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const google_spreadsheet_1 = require("google-spreadsheet");
 const fs_1 = require("fs");
-const app_1 = __importDefault(require("../app"));
 const calendar_1 = __importDefault(require("./calendar"));
 const person_1 = __importDefault(require("../models/person"));
 const task_1 = __importDefault(require("../models/task"));
+const log_1 = require("../log");
 class Sheets {
     constructor() {
         this.people = [];
@@ -34,12 +34,12 @@ class Sheets {
         let creds = JSON.parse(credsJson);
         await this.doc.useServiceAccountAuth(creds);
         await this.doc.loadInfo();
-        app_1.default.log.info(`Loading '${this.doc.title}'`);
+        (0, log_1.log)(`Loading '${this.doc.title}'`);
         let people = await this.loadPeople();
         let active = this.getActivePeople();
-        app_1.default.log.info(`Loaded ${people.length} people (${active.length} are active)`);
+        (0, log_1.log)(`Loaded ${people.length} people (${active.length} are active)`);
         let tasks = await this.loadTasks();
-        app_1.default.log.info(`Loaded ${tasks.length} tasks`);
+        (0, log_1.log)(`Loaded ${tasks.length} tasks`);
         return this;
     }
     async loadPeople() {
@@ -70,17 +70,17 @@ class Sheets {
         assignment.time = data.time;
         assignment.person = data.person;
         assignment.status = data.status;
-        app_1.default.log.info(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
+        (0, log_1.log)(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
         return assignment;
     }
     validateSecret(data) {
         return data.secret && Sheets.config.webhookSecret == data.secret;
     }
     getActivePeople() {
-        return this.people.filter((p) => p.status == 'active' || p.status == 'backup');
+        return this.people.filter(p => p.status == 'active' || p.status == 'backup');
     }
     async currentBackup() {
-        let [person] = this.people.filter((p) => p.status == 'backup');
+        let [person] = this.people.filter(p => p.status == 'backup');
         if (person) {
             return person;
         }
@@ -90,7 +90,7 @@ class Sheets {
         for (let row of rows) {
             row.status = 'backup';
             await row.save();
-            [person] = this.people.filter((p) => p.name == row.name);
+            [person] = this.people.filter(p => p.name == row.name);
             person.status = 'backup';
             return person;
         }

@@ -1,10 +1,10 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { SheetsConfig, AssignmentUpdate } from '../types';
 import { readFileSync } from 'fs';
-import app from '../app';
 import Calendar from './calendar';
 import Person from '../models/person';
 import Task from '../models/task';
+import { log } from '../log';
 
 class Sheets {
 	private static config: SheetsConfig;
@@ -42,14 +42,12 @@ class Sheets {
 		let creds = JSON.parse(credsJson);
 		await this.doc.useServiceAccountAuth(creds);
 		await this.doc.loadInfo();
-		app.log.info(`Loading '${this.doc.title}'`);
+		log(`Loading '${this.doc.title}'`);
 		let people = await this.loadPeople();
 		let active = this.getActivePeople();
-		app.log.info(
-			`Loaded ${people.length} people (${active.length} are active)`
-		);
+		log(`Loaded ${people.length} people (${active.length} are active)`);
 		let tasks = await this.loadTasks();
-		app.log.info(`Loaded ${tasks.length} tasks`);
+		log(`Loaded ${tasks.length} tasks`);
 		return this;
 	}
 
@@ -83,9 +81,7 @@ class Sheets {
 		assignment.time = data.time;
 		assignment.person = data.person;
 		assignment.status = data.status;
-		app.log.info(
-			`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`
-		);
+		log(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
 		return assignment;
 	}
 

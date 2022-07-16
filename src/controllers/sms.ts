@@ -1,18 +1,17 @@
-import app from '../app';
-
 import { FastifyReply } from 'fastify';
 import { SMSConfig, IncomingMessage, PersonContext } from '../types';
 import { twiml } from 'twilio';
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
+import twilio from 'twilio';
 import * as moment from 'moment-timezone';
 
-import twilio from 'twilio';
 import Sheets from './sheets';
 import Calendar from './calendar';
 import Person from '../models/person';
 import Assignment from '../models/assignment';
+import { log } from '../log';
 
 class SMS {
 	private static config: SMSConfig;
@@ -481,7 +480,7 @@ class SMS {
 	}
 
 	async sendMessage(person: Person, body: string, media: string[] = []) {
-		app.log.info(`SMS to ${person.name}: ${body}`);
+		log(`SMS to ${person.name}: ${body}`);
 		await this.twilio.messages.create({
 			from: this.phone,
 			to: person.phone,

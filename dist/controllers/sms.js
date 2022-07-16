@@ -26,17 +26,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const app_1 = __importDefault(require("../app"));
 const types_1 = require("../types");
 const twilio_1 = require("twilio");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const axios_1 = __importDefault(require("axios"));
-const moment = __importStar(require("moment-timezone"));
 const twilio_2 = __importDefault(require("twilio"));
+const moment = __importStar(require("moment-timezone"));
 const sheets_1 = __importDefault(require("./sheets"));
 const calendar_1 = __importDefault(require("./calendar"));
 const person_1 = __importDefault(require("../models/person"));
+const log_1 = require("../log");
 class SMS {
     constructor() {
         this.twilio = (0, twilio_2.default)(SMS.config.accountSid, SMS.config.authToken);
@@ -132,8 +132,8 @@ class SMS {
         let sheets = await sheets_1.default.getInstance();
         let people = sheets.getActivePeople();
         for (let assignment of due) {
-            let [person] = people.filter((p) => p.name == assignment.person);
-            let [task] = sheets.tasks.filter((t) => t.name == assignment.task);
+            let [person] = people.filter(p => p.name == assignment.person);
+            let [task] = sheets.tasks.filter(t => t.name == assignment.task);
             if (!person || !task) {
                 continue;
             }
@@ -272,7 +272,7 @@ class SMS {
     async scheduleIfAllAreReady() {
         let sheets = await sheets_1.default.getInstance();
         let activePeople = sheets.getActivePeople();
-        let readyPeople = activePeople.filter((p) => p.context == types_1.PersonContext.READY);
+        let readyPeople = activePeople.filter(p => p.context == types_1.PersonContext.READY);
         let allAreReady = activePeople.length == readyPeople.length;
         if (allAreReady) {
             let calendar = await calendar_1.default.getInstance();
@@ -417,7 +417,7 @@ class SMS {
         }
         let name = match[1];
         let body = match[2];
-        let [relayTo] = sheets.people.filter((p) => p.name == name);
+        let [relayTo] = sheets.people.filter(p => p.name == name);
         if (!relayTo) {
             throw new Error('Could not find person to relay message to');
         }
@@ -440,7 +440,7 @@ class SMS {
             throw new Error('Could not match backup regex');
         }
         let name = match[1];
-        let [newBackup] = sheets.people.filter((p) => p.name.toLowerCase() == name.toLowerCase());
+        let [newBackup] = sheets.people.filter(p => p.name.toLowerCase() == name.toLowerCase());
         await currBackup.updateStatus('active');
         await newBackup.updateStatus('backup');
         await this.sendMessage(newBackup, `Hi ${newBackup.name}, ${currBackup.name} has made you the new designated backup.`);
@@ -451,14 +451,14 @@ class SMS {
         if (msg.AccountSid !== SMS.config.accountSid) {
             throw new Error('Whoops, Twilio needs to be configured.');
         }
-        let [person] = sheets.people.filter((p) => msg.From == p.phone);
+        let [person] = sheets.people.filter(p => msg.From == p.phone);
         if (!person) {
             throw new Error('Sorry, I don’t know who you are.');
         }
         return person;
     }
     async sendMessage(person, body, media = []) {
-        app_1.default.log.info(`SMS to ${person.name}: ${body}`);
+        (0, log_1.log)(`SMS to ${person.name}: ${body}`);
         await this.twilio.messages.create({
             from: this.phone,
             to: person.phone,
@@ -474,7 +474,7 @@ class SMS {
     }
     async getNamesRegex() {
         let sheets = await sheets_1.default.getInstance();
-        let names = sheets.getActivePeople().map((p) => p.name);
+        let names = sheets.getActivePeople().map(p => p.name);
         return new RegExp(`^(${names.join('|')}):\\s*(.+)$`, 'msi');
     }
     getAnnounceRegex() {
@@ -482,7 +482,7 @@ class SMS {
     }
     async getBackupRegex() {
         let sheets = await sheets_1.default.getInstance();
-        let names = sheets.getActivePeople().map((p) => p.name);
+        let names = sheets.getActivePeople().map(p => p.name);
         return new RegExp(`^backup:\\s*(${names.join('|')})\\s*$`, 'msi');
     }
 }

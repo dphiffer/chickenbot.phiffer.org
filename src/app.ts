@@ -11,6 +11,8 @@ import Sheets from './controllers/sheets';
 import Calendar from './controllers/calendar';
 import SMS from './controllers/sms';
 
+import { setLogFunction } from './log';
+
 const configPath = `${path.dirname(__dirname)}/config/config.json`;
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
@@ -33,6 +35,7 @@ app.register(fastifyStatic, {
 });
 app.register(routes);
 
+setLogFunction(app.log.info);
 Sheets.configure(config.google);
 SMS.configure(config.twilio);
 Calendar.configure(config.calendar);

@@ -13,6 +13,7 @@ const routes_1 = __importDefault(require("./routes"));
 const sheets_1 = __importDefault(require("./controllers/sheets"));
 const calendar_1 = __importDefault(require("./controllers/calendar"));
 const sms_1 = __importDefault(require("./controllers/sms"));
+const log_1 = require("./log");
 const configPath = `${path_1.default.dirname(__dirname)}/config/config.json`;
 const config = JSON.parse(fs_1.default.readFileSync(configPath, 'utf8'));
 const app = (0, fastify_1.default)({
@@ -33,6 +34,7 @@ app.register(static_1.default, {
     root: path_1.default.join(path_1.default.dirname(__dirname), 'public'),
 });
 app.register(routes_1.default);
+(0, log_1.setLogFunction)(app.log.info);
 sheets_1.default.configure(config.google);
 sms_1.default.configure(config.twilio);
 calendar_1.default.configure(config.calendar);
