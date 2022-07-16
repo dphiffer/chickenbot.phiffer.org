@@ -39,6 +39,7 @@ const person_1 = __importDefault(require("../models/person"));
 const app_1 = __importDefault(require("../app"));
 class SMS {
     constructor() {
+        this.isScheduling = false;
         this.twilio = (0, twilio_2.default)(SMS.config.accountSid, SMS.config.authToken);
         this.phone = SMS.config.phone;
     }
@@ -104,6 +105,9 @@ class SMS {
         else if (sms == 'announce') {
             await this.setAnnounceContext(backup);
         }
+        else if (sms == 'ready') {
+            rsp = await this.setReadyContext(backup);
+        }
         else if (backup.context == types_1.PersonContext.ANNOUNCE) {
             rsp = await this.sendAnnouncement(msg, backup);
         }
@@ -165,6 +169,7 @@ class SMS {
         return '';
     }
     async scheduleStart() {
+        this.isScheduling = true;
         let sheets = await sheets_1.default.getInstance();
         let people = sheets.getActivePeople();
         for (let person of people) {
@@ -190,7 +195,7 @@ class SMS {
         }
         else if (SMS.noReplies.indexOf(sms) > -1) {
             person.context = types_1.PersonContext.READY;
-            rsp = await this.scheduleIfAllAreReady();
+            rsp = await this.scheduleIfAllAreReady(person);
         }
         else {
             rsp = 'Sorry, please reply with Y or N.';
@@ -222,7 +227,7 @@ class SMS {
         }
         else if (SMS.yesReplies.indexOf(sms) > -1) {
             person.context = types_1.PersonContext.READY;
-            rsp = await this.scheduleIfAllAreReady();
+            rsp = await this.scheduleIfAllAreReady(person);
         }
         else {
             rsp = 'Sorry, please reply Y or N.';
@@ -265,19 +270,26 @@ class SMS {
         }
         else if (SMS.yesReplies.indexOf(sms) > -1) {
             person.context = types_1.PersonContext.READY;
-            rsp = await this.scheduleIfAllAreReady();
+            rsp = await this.scheduleIfAllAreReady(person);
         }
         else {
             rsp = 'Sorry, please reply Y or N.';
         }
         return rsp;
     }
-    async scheduleIfAllAreReady() {
+    async scheduleIfAllAreReady(person = null) {
         let sheets = await sheets_1.default.getInstance();
         let activePeople = sheets.getActivePeople();
         let readyPeople = activePeople.filter(p => p.context == types_1.PersonContext.READY);
         let allAreReady = activePeople.length == readyPeople.length;
+        if (person) {
+            let backup = await sheets.currentBackup();
+            if (backup) {
+                this.sendMessage(backup, `[${person.name} is ready to schedule tasks]`);
+            }
+        }
         if (allAreReady) {
+            this.isScheduling = false;
             let calendar = await calendar_1.default.getInstance();
             calendar.scheduleTasks().then(this.scheduleSend.bind(this));
             return '';
@@ -297,8 +309,29 @@ class SMS {
         if (backup.context == types_1.PersonContext.ANNOUNCE) {
             return;
         }
-        await backup.setTemporaryContext(types_1.PersonContext.ANNOUNCE);
+        await backup.setTemporaryContext(types_1.PersonContext.ANNOUNCE, () => {
+            this.sendMessage(backup, '[Done announcing messages]');
+        });
         await this.sendMessage(backup, '[Now announcing messages]');
+    }
+    async setReadyContext(backup) {
+        let rsp = '';
+        if (this.isScheduling) {
+            backup.context = types_1.PersonContext.READY;
+            rsp = await this.scheduleIfAllAreReady();
+        }
+        else if (backup.context == types_1.PersonContext.ANNOUNCE ||
+            backup.context == types_1.PersonContext.CHAT) {
+            rsp = '[Resetting temporary context]';
+        }
+        else if (backup.context == types_1.PersonContext.ASSIGNMENT) {
+            rsp = '[Abandoning assignment]';
+        }
+        else {
+            rsp = '[You are ready]';
+        }
+        backup.context = types_1.PersonContext.READY;
+        return rsp;
     }
     async setChatContext(person) {
         var _a;
@@ -314,7 +347,12 @@ class SMS {
         if (person.name == backup.name) {
             return;
         }
-        await backup.setTemporaryContext(types_1.PersonContext.CHAT, person);
+        let onExpire = async () => {
+            if (backup) {
+                await this.sendMessage(backup, `[Done chatting with ${person.name}]`);
+            }
+        };
+        await backup.setTemporaryContext(types_1.PersonContext.CHAT, onExpire, person);
         await this.sendMessage(backup, `[Now chatting with ${person.name}]`);
     }
     async relayAnnouncement(msg, backup) {

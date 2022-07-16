@@ -116,7 +116,7 @@ class Person {
         }
         return false;
     }
-    async setTemporaryContext(context, chatContext = null) {
+    async setTemporaryContext(context, onExpire, chatContext = null) {
         app_1.default.log.info(`Setting ${this.name}'s temporary context to '${context}'`);
         this.context = context;
         if (chatContext) {
@@ -126,6 +126,7 @@ class Person {
             (0, timers_1.clearTimeout)(this.contextTimeout);
         }
         this.contextTimeout = setTimeout(() => {
+            onExpire();
             app_1.default.log.info(`Resetting ${this.name}'s context to '${types_1.PersonContext.READY}'`);
             if (this.context == context) {
                 this.context = types_1.PersonContext.READY;

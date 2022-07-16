@@ -29,6 +29,7 @@ class SMS {
 
 	twilio: twilio.Twilio;
 	phone: string;
+	isScheduling: boolean = false;
 
 	private constructor() {
 		this.twilio = twilio(SMS.config.accountSid, SMS.config.authToken);
@@ -92,6 +93,8 @@ class SMS {
 			await this.scheduleStart();
 		} else if (sms == 'announce') {
 			await this.setAnnounceContext(backup);
+		} else if (sms == 'ready') {
+			rsp = await this.setReadyContext(backup);
 		} else if (backup.context == PersonContext.ANNOUNCE) {
 			rsp = await this.sendAnnouncement(msg, backup);
 		} else if (sms.match(namesRegex)) {
@@ -154,6 +157,7 @@ class SMS {
 	}
 
 	async scheduleStart() {
+		this.isScheduling = true;
 		let sheets = await Sheets.getInstance();
 		let people = sheets.getActivePeople();
 		for (let person of people) {
@@ -183,7 +187,7 @@ class SMS {
 				'Which days will you be away this week? [reply with comma-separated days: Mon, Tue or 6/17, 6/18]';
 		} else if (SMS.noReplies.indexOf(sms) > -1) {
 			person.context = PersonContext.READY;
-			rsp = await this.scheduleIfAllAreReady();
+			rsp = await this.scheduleIfAllAreReady(person);
 		} else {
 			rsp = 'Sorry, please reply with Y or N.';
 		}
@@ -215,7 +219,7 @@ class SMS {
 			rsp = this.scheduleAwayTime(person);
 		} else if (SMS.yesReplies.indexOf(sms) > -1) {
 			person.context = PersonContext.READY;
-			rsp = await this.scheduleIfAllAreReady();
+			rsp = await this.scheduleIfAllAreReady(person);
 		} else {
 			rsp = 'Sorry, please reply Y or N.';
 		}
@@ -257,21 +261,31 @@ class SMS {
 			rsp = `Ok, let's start over. Are there any days you will be away this week? [reply Y or N]`;
 		} else if (SMS.yesReplies.indexOf(sms) > -1) {
 			person.context = PersonContext.READY;
-			rsp = await this.scheduleIfAllAreReady();
+			rsp = await this.scheduleIfAllAreReady(person);
 		} else {
 			rsp = 'Sorry, please reply Y or N.';
 		}
 		return rsp;
 	}
 
-	async scheduleIfAllAreReady() {
+	async scheduleIfAllAreReady(person: null | Person = null) {
 		let sheets = await Sheets.getInstance();
 		let activePeople = sheets.getActivePeople();
 		let readyPeople = activePeople.filter(
 			p => p.context == PersonContext.READY
 		);
 		let allAreReady = activePeople.length == readyPeople.length;
+		if (person) {
+			let backup = await sheets.currentBackup();
+			if (backup) {
+				this.sendMessage(
+					backup,
+					`[${person.name} is ready to schedule tasks]`
+				);
+			}
+		}
 		if (allAreReady) {
+			this.isScheduling = false;
 			let calendar = await Calendar.getInstance();
 			calendar.scheduleTasks().then(this.scheduleSend.bind(this));
 			return '';
@@ -293,8 +307,29 @@ class SMS {
 		if (backup.context == PersonContext.ANNOUNCE) {
 			return;
 		}
-		await backup.setTemporaryContext(PersonContext.ANNOUNCE);
+		await backup.setTemporaryContext(PersonContext.ANNOUNCE, () => {
+			this.sendMessage(backup, '[Done announcing messages]');
+		});
 		await this.sendMessage(backup, '[Now announcing messages]');
+	}
+
+	async setReadyContext(backup: Person) {
+		let rsp = '';
+		if (this.isScheduling) {
+			backup.context = PersonContext.READY;
+			rsp = await this.scheduleIfAllAreReady();
+		} else if (
+			backup.context == PersonContext.ANNOUNCE ||
+			backup.context == PersonContext.CHAT
+		) {
+			rsp = '[Resetting temporary context]';
+		} else if (backup.context == PersonContext.ASSIGNMENT) {
+			rsp = '[Abandoning assignment]';
+		} else {
+			rsp = '[You are ready]';
+		}
+		backup.context = PersonContext.READY;
+		return rsp;
 	}
 
 	async setChatContext(person: Person) {
@@ -312,7 +347,15 @@ class SMS {
 		if (person.name == backup.name) {
 			return;
 		}
-		await backup.setTemporaryContext(PersonContext.CHAT, person);
+		let onExpire = async () => {
+			if (backup) {
+				await this.sendMessage(
+					backup,
+					`[Done chatting with ${person.name}]`
+				);
+			}
+		};
+		await backup.setTemporaryContext(PersonContext.CHAT, onExpire, person);
 		await this.sendMessage(backup, `[Now chatting with ${person.name}]`);
 	}
 

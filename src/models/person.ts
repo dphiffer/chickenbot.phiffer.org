@@ -5,6 +5,7 @@ import Sheets from '../controllers/sheets';
 import Assignment from './assignment';
 import { clearTimeout } from 'timers';
 import app from '../app';
+import { callbackify } from 'util';
 
 class Person {
 	name: string;
@@ -127,6 +128,7 @@ class Person {
 
 	async setTemporaryContext(
 		context: PersonContext,
+		onExpire: Function,
 		chatContext: null | Person = null
 	) {
 		app.log.info(
@@ -140,6 +142,7 @@ class Person {
 			clearTimeout(this.contextTimeout);
 		}
 		this.contextTimeout = setTimeout(() => {
+			onExpire();
 			app.log.info(
 				`Resetting ${this.name}'s context to '${PersonContext.READY}'`
 			);
