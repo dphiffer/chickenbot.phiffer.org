@@ -60,8 +60,19 @@ class Sheets {
         }
         return this.tasks;
     }
-    async updateAssignment(data) {
+    async updateFromWebhook(data) {
+        app_1.default.log.info(data);
         this.validateSecret(data);
+        let updated;
+        if (data.assignment) {
+            updated = await this.updateAssignment(data.assignment);
+        }
+        else if (data.person) {
+            updated = await this.updatePerson(data.person);
+        }
+        return updated;
+    }
+    async updateAssignment(data) {
         let calendar = await calendar_1.default.getInstance();
         let assignment = calendar.getAssignment(data.date, data.task);
         if (!assignment) {
@@ -72,6 +83,17 @@ class Sheets {
         assignment.status = data.status;
         app_1.default.log.info(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
         return assignment;
+    }
+    async updatePerson(data) {
+        let [person] = this.people.filter(p => p.name == data.name);
+        if (!person) {
+            throw new Error(`Person '${data.name}' not found.`);
+        }
+        person.phone = data.phone;
+        person.status = data.status;
+        person.away = data.away;
+        app_1.default.log.info(`Updated '${person.name}'`);
+        return person;
     }
     validateSecret(data) {
         return data.secret && Sheets.config.webhookSecret == data.secret;

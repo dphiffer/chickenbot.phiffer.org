@@ -1,5 +1,10 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
-import { SheetsConfig, AssignmentUpdate } from '../types';
+import {
+	SheetsConfig,
+	WebhookUpdate,
+	AssignmentUpdate,
+	PersonUpdate,
+} from '../types';
 import { readFileSync } from 'fs';
 import Calendar from './calendar';
 import Person from '../models/person';
@@ -73,8 +78,19 @@ class Sheets {
 		return this.tasks;
 	}
 
-	async updateAssignment(data: AssignmentUpdate) {
+	async updateFromWebhook(data: WebhookUpdate) {
+		app.log.info(data);
 		this.validateSecret(data);
+		let updated;
+		if (data.assignment) {
+			updated = await this.updateAssignment(data.assignment);
+		} else if (data.person) {
+			updated = await this.updatePerson(data.person);
+		}
+		return updated;
+	}
+
+	async updateAssignment(data: AssignmentUpdate) {
 		let calendar = await Calendar.getInstance();
 		let assignment = calendar.getAssignment(data.date, data.task);
 		if (!assignment) {
@@ -89,7 +105,19 @@ class Sheets {
 		return assignment;
 	}
 
-	validateSecret(data: AssignmentUpdate) {
+	async updatePerson(data: PersonUpdate) {
+		let [person] = this.people.filter(p => p.name == data.name);
+		if (!person) {
+			throw new Error(`Person '${data.name}' not found.`);
+		}
+		person.phone = data.phone;
+		person.status = data.status;
+		person.away = data.away;
+		app.log.info(`Updated '${person.name}'`);
+		return person;
+	}
+
+	validateSecret(data: WebhookUpdate) {
 		return data.secret && Sheets.config.webhookSecret == data.secret;
 	}
 

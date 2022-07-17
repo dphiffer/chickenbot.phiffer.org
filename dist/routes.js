@@ -47,10 +47,7 @@ async function routes(app) {
     app.post('/update', async (request, reply) => {
         try {
             let sheets = await sheets_1.default.getInstance();
-            let assignment = await sheets.updateAssignment(request.body);
-            return {
-                assignment: assignment,
-            };
+            return sheets.updateFromWebhook(request.body);
         }
         catch (err) {
             app.log.error(err);

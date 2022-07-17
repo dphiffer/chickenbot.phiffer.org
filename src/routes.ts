@@ -1,6 +1,6 @@
 import moment from 'moment';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { IncomingMessage, AssignmentUpdate } from './types';
+import { IncomingMessage, AssignmentUpdate, PersonUpdate } from './types';
 import SMS from './controllers/sms';
 import Sheets from './controllers/sheets';
 import Calendar from './controllers/calendar';
@@ -56,16 +56,17 @@ async function routes(app: FastifyInstance) {
 		'/update',
 		async (
 			request: FastifyRequest<{
-				Body: AssignmentUpdate & { secret: string };
+				Body: {
+					secret: string;
+					assignment?: AssignmentUpdate;
+					person?: PersonUpdate;
+				};
 			}>,
 			reply: FastifyReply
 		) => {
 			try {
 				let sheets = await Sheets.getInstance();
-				let assignment = await sheets.updateAssignment(request.body);
-				return {
-					assignment: assignment,
-				};
+				return sheets.updateFromWebhook(request.body);
 			} catch (err) {
 				app.log.error(err);
 				return {

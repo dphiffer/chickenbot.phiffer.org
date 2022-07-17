@@ -1,6 +1,6 @@
 import LoggerOptions from 'pino';
 
-interface Config {
+export interface Config {
 	server: {
 		port: number;
 		host: string;
@@ -12,26 +12,26 @@ interface Config {
 	calendar: CalendarConfig;
 }
 
-interface SheetsConfig {
+export interface SheetsConfig {
 	spreadsheetId: string;
 	credentials: string;
 	webhookSecret: string;
 }
 
-interface SMSConfig {
+export interface SMSConfig {
 	accountSid: string;
 	authToken: string;
 	phone: string;
 	serverUrl: string;
 }
 
-interface CalendarConfig {
+export interface CalendarConfig {
 	timezone: string;
 	latitude: number;
 	longitude: number;
 }
 
-interface IncomingMessage {
+export interface IncomingMessage {
 	ApiVersion: '2010-04-01';
 	AccountSid: string;
 	Body: string;
@@ -40,8 +40,7 @@ interface IncomingMessage {
 	[property: string]: string;
 }
 
-interface AssignmentUpdate {
-	secret?: string;
+export interface AssignmentUpdate {
 	date: string;
 	time: string;
 	task: string;
@@ -49,7 +48,20 @@ interface AssignmentUpdate {
 	status: string;
 }
 
-enum PersonContext {
+export interface PersonUpdate {
+	name: string;
+	phone: string;
+	status: string;
+	away: string;
+}
+
+export interface WebhookUpdate {
+	secret: string;
+	assignment?: AssignmentUpdate;
+	person?: PersonUpdate;
+}
+
+export enum PersonContext {
 	READY = 'ready',
 	ASSIGNMENT = 'assignment',
 	ANNOUNCE = 'announce',
@@ -60,13 +72,3 @@ enum PersonContext {
 	SCHEDULE_AWAY_TIME = 'schedule-away-time',
 	SCHEDULE_AWAY_CONFIRM = 'schedule-away-confirm',
 }
-
-export {
-	Config,
-	SheetsConfig,
-	SMSConfig,
-	CalendarConfig,
-	PersonContext,
-	IncomingMessage,
-	AssignmentUpdate,
-};
