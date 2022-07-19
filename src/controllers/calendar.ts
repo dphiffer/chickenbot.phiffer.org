@@ -1,11 +1,11 @@
 import * as moment from 'moment-timezone';
 import * as suntimes from 'suntimes';
-import { CalendarConfig, PersonContext } from '../types';
+import { CalendarConfig } from '../app';
 import Sheets from './sheets';
 import Person from '../models/person';
 import Task from '../models/task';
 import Assignment from '../models/assignment';
-import SMS from './sms';
+import SMS from './messages';
 import app from '../app';
 
 class Calendar {

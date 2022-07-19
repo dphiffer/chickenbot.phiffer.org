@@ -30,7 +30,7 @@ const moment = __importStar(require("moment-timezone"));
 const suntimes = __importStar(require("suntimes"));
 const sheets_1 = __importDefault(require("./sheets"));
 const assignment_1 = __importDefault(require("../models/assignment"));
-const sms_1 = __importDefault(require("./sms"));
+const messages_1 = __importDefault(require("./messages"));
 const app_1 = __importDefault(require("../app"));
 class Calendar {
     constructor() {
@@ -303,7 +303,7 @@ class Calendar {
             }
         }
         if (assignmentsDue.length > 0) {
-            let sms = sms_1.default.getInstance();
+            let sms = messages_1.default.getInstance();
             await sms.sendAssignments(assignmentsDue);
         }
     }

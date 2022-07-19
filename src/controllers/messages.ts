@@ -1,5 +1,7 @@
 import { FastifyReply } from 'fastify';
-import { SMSConfig, IncomingMessage, PersonContext } from '../types';
+import { TwilioConfig } from '../app';
+import { IncomingMessage } from '../routes';
+import { PersonContext } from '../models/person';
 import { twiml } from 'twilio';
 import fs from 'fs';
 import path from 'path';
@@ -13,9 +15,9 @@ import Person from '../models/person';
 import Assignment from '../models/assignment';
 import app from '../app';
 
-class SMS {
-	private static config: SMSConfig;
-	static instance: SMS;
+export default class Messages {
+	private static config: TwilioConfig;
+	static instance: Messages;
 	static yesReplies = [
 		'y',
 		'yes',
@@ -32,11 +34,14 @@ class SMS {
 	isScheduling: boolean = false;
 
 	private constructor() {
-		this.twilio = twilio(SMS.config.accountSid, SMS.config.authToken);
-		this.phone = SMS.config.phone;
+		this.twilio = twilio(
+			Messages.config.accountSid,
+			Messages.config.authToken
+		);
+		this.phone = Messages.config.phone;
 	}
 
-	static configure(config: SMSConfig) {
+	static configure(config: TwilioConfig) {
 		this.config = config;
 	}
 
@@ -44,7 +49,7 @@ class SMS {
 		if (this.instance) {
 			return this.instance;
 		}
-		this.instance = new SMS();
+		this.instance = new Messages();
 		return this.instance;
 	}
 
@@ -141,7 +146,7 @@ class SMS {
 				`${person.name} replied in assignment context without an assignment`
 			);
 		}
-		if (SMS.yesReplies.indexOf(sms) > -1) {
+		if (Messages.yesReplies.indexOf(sms) > -1) {
 			await person.assignment.setDone();
 			return Person.getAffirmation();
 		} else if (sms == 'snooze') {
@@ -181,11 +186,11 @@ class SMS {
 	async handleScheduleStartReply(msg: IncomingMessage, person: Person) {
 		let sms = this.normalizeBody(msg);
 		let rsp = '';
-		if (SMS.yesReplies.indexOf(sms) > -1) {
+		if (Messages.yesReplies.indexOf(sms) > -1) {
 			person.context = PersonContext.SCHEDULE_AWAY_DAYS;
 			rsp =
 				'Which days will you be away this week? [reply with comma-separated days: Mon, Tue or 6/17, 6/18]';
-		} else if (SMS.noReplies.indexOf(sms) > -1) {
+		} else if (Messages.noReplies.indexOf(sms) > -1) {
 			person.context = PersonContext.READY;
 			rsp = await this.scheduleIfAllAreReady(person);
 		} else {
@@ -213,11 +218,11 @@ class SMS {
 	async handleScheduleAwayFullReply(msg: IncomingMessage, person: Person) {
 		let sms = this.normalizeBody(msg);
 		let rsp = '';
-		if (SMS.noReplies.indexOf(sms) > -1) {
+		if (Messages.noReplies.indexOf(sms) > -1) {
 			person.context = PersonContext.SCHEDULE_AWAY_TIME;
 			person.scheduleDayIndex = 0;
 			rsp = this.scheduleAwayTime(person);
-		} else if (SMS.yesReplies.indexOf(sms) > -1) {
+		} else if (Messages.yesReplies.indexOf(sms) > -1) {
 			person.context = PersonContext.READY;
 			rsp = await this.scheduleIfAllAreReady(person);
 		} else {
@@ -255,11 +260,11 @@ class SMS {
 	async handleScheduleAwayConfirmReply(msg: IncomingMessage, person: Person) {
 		let sms = this.normalizeBody(msg);
 		let rsp = '';
-		if (SMS.noReplies.indexOf(sms) > -1) {
+		if (Messages.noReplies.indexOf(sms) > -1) {
 			person.context = PersonContext.SCHEDULE_START;
 			person.scheduleDayIndex = 0;
 			rsp = `Ok, let's start over. Are there any days you will be away this week? [reply Y or N]`;
-		} else if (SMS.yesReplies.indexOf(sms) > -1) {
+		} else if (Messages.yesReplies.indexOf(sms) > -1) {
 			person.context = PersonContext.READY;
 			rsp = await this.scheduleIfAllAreReady(person);
 		} else {
@@ -457,7 +462,7 @@ class SMS {
 				});
 				const pipe = response.data.pipe(fs.createWriteStream(filename));
 				pipe.on('finish', () => {
-					resolve(`${SMS.config.serverUrl}${publicPath}`);
+					resolve(`${Messages.config.serverUrl}${publicPath}`);
 				});
 			} catch (err) {
 				reject(err);
@@ -524,7 +529,7 @@ class SMS {
 
 	async validateMessage(msg: IncomingMessage) {
 		let sheets = await Sheets.getInstance();
-		if (msg.AccountSid !== SMS.config.accountSid) {
+		if (msg.AccountSid !== Messages.config.accountSid) {
 			throw new Error('Whoops, Twilio needs to be configured.');
 		}
 		let [person] = sheets.people.filter(p => msg.From == p.phone);
@@ -567,5 +572,3 @@ class SMS {
 		return new RegExp(`^backup:\\s*(${names.join('|')})\\s*$`, 'msi');
 	}
 }
-
-export default SMS;

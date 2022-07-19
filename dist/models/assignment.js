@@ -28,7 +28,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const moment = __importStar(require("moment-timezone"));
 const sheets_1 = __importDefault(require("../controllers/sheets"));
-const sms_1 = __importDefault(require("../controllers/sms"));
+const messages_1 = __importDefault(require("../controllers/messages"));
 class Assignment {
     constructor(sheet, data) {
         this.timeout = null;
@@ -46,11 +46,11 @@ class Assignment {
         this.status = 'pending';
         await this.save();
         this.timeout = setTimeout(async () => {
-            let sms = sms_1.default.getInstance();
+            let messages = messages_1.default.getInstance();
             let sheets = await sheets_1.default.getInstance();
             let backup = await sheets.currentBackup();
             if (backup) {
-                sms.sendMessage(backup, `Still pending after one hour: ${this.task}, assigned to ${this.person}.`);
+                messages.sendMessage(backup, `Still pending after one hour: ${this.task}, assigned to ${this.person}.`);
             }
         }, 60 * 60 * 1000);
     }

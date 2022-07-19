@@ -3,21 +3,34 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const types_1 = require("../types");
+exports.PersonContext = void 0;
 const moment_timezone_1 = __importDefault(require("moment-timezone"));
 const sheets_1 = __importDefault(require("../controllers/sheets"));
 const timers_1 = require("timers");
 const app_1 = __importDefault(require("../app"));
+var PersonContext;
+(function (PersonContext) {
+    PersonContext["READY"] = "ready";
+    PersonContext["ASSIGNMENT"] = "assignment";
+    PersonContext["ANNOUNCE"] = "announce";
+    PersonContext["CHAT"] = "chat";
+    PersonContext["SCHEDULE_START"] = "schedule-start";
+    PersonContext["SCHEDULE_AWAY_DAYS"] = "schedule-away-days";
+    PersonContext["SCHEDULE_AWAY_FULL"] = "schedule-away-full";
+    PersonContext["SCHEDULE_AWAY_TIME"] = "schedule-away-time";
+    PersonContext["SCHEDULE_AWAY_CONFIRM"] = "schedule-away-confirm";
+})(PersonContext = exports.PersonContext || (exports.PersonContext = {}));
 class Person {
     constructor(sheets, row) {
         this.schedule = null;
         this.assignment = null;
-        this.context = types_1.PersonContext.READY;
+        this.context = PersonContext.READY;
         this.chatContext = null;
         this.contextTimeout = null;
         this.scheduleDayIndex = 0;
         this.name = row.name;
         this.phone = this.normalizePhone(row.phone);
+        this.call = row.call.strToLower() == 'yes';
         this.status = row.status;
         this.away = row.away || '';
     }
@@ -29,7 +42,7 @@ class Person {
         phone = `+${phone}`;
         return phone;
     }
-    static getAffirmation() {
+    static getAffirmation(textOnly = false) {
         let affirmations = [
             'Thank you!',
             'The chickens appreciate you so much.',
@@ -37,7 +50,8 @@ class Person {
             'You’re the best!',
             '❤️🐔❤️',
         ];
-        let index = Math.floor(Math.random() * affirmations.length);
+        let length = textOnly ? affirmations.length - 1 : affirmations.length;
+        let index = Math.floor(Math.random() * length);
         return affirmations[index];
     }
     async updateStatus(status) {
@@ -127,9 +141,9 @@ class Person {
         }
         this.contextTimeout = setTimeout(() => {
             onExpire();
-            app_1.default.log.info(`Resetting ${this.name}'s context to '${types_1.PersonContext.READY}'`);
+            app_1.default.log.info(`Resetting ${this.name}'s context to '${PersonContext.READY}'`);
             if (this.context == context) {
-                this.context = types_1.PersonContext.READY;
+                this.context = PersonContext.READY;
             }
             this.chatContext = null;
             this.contextTimeout = null;

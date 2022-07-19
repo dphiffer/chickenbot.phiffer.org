@@ -1,10 +1,8 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
-import {
-	SheetsConfig,
-	WebhookUpdate,
-	AssignmentUpdate,
-	PersonUpdate,
-} from '../types';
+import { SheetsConfig } from '../app';
+import { WebhookUpdate } from '../routes';
+import { AssignmentUpdate } from '../models/assignment';
+import { PersonUpdate } from '../models/person';
 import { readFileSync } from 'fs';
 import Calendar from './calendar';
 import Person from '../models/person';

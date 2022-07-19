@@ -1,5 +1,4 @@
 import { GoogleSpreadsheetRow } from 'google-spreadsheet';
-import { PersonContext } from '../types';
 import moment from 'moment-timezone';
 import Sheets from '../controllers/sheets';
 import Assignment from './assignment';
@@ -7,9 +6,30 @@ import { clearTimeout } from 'timers';
 import app from '../app';
 import { callbackify } from 'util';
 
-class Person {
+export interface PersonUpdate {
 	name: string;
 	phone: string;
+	call: string;
+	status: string;
+	away: string;
+}
+
+export enum PersonContext {
+	READY = 'ready',
+	ASSIGNMENT = 'assignment',
+	ANNOUNCE = 'announce',
+	CHAT = 'chat',
+	SCHEDULE_START = 'schedule-start',
+	SCHEDULE_AWAY_DAYS = 'schedule-away-days',
+	SCHEDULE_AWAY_FULL = 'schedule-away-full',
+	SCHEDULE_AWAY_TIME = 'schedule-away-time',
+	SCHEDULE_AWAY_CONFIRM = 'schedule-away-confirm',
+}
+
+export default class Person {
+	name: string;
+	phone: string;
+	call: boolean;
 	status: string;
 	away: string;
 
@@ -23,6 +43,7 @@ class Person {
 	constructor(sheets: Sheets, row: GoogleSpreadsheetRow) {
 		this.name = row.name;
 		this.phone = this.normalizePhone(row.phone);
+		this.call = row.call.strToLower() == 'yes';
 		this.status = row.status;
 		this.away = row.away || '';
 	}
@@ -36,7 +57,7 @@ class Person {
 		return phone;
 	}
 
-	static getAffirmation() {
+	static getAffirmation(textOnly = false) {
 		let affirmations = [
 			'Thank you!',
 			'The chickens appreciate you so much.',
@@ -44,7 +65,8 @@ class Person {
 			'You’re the best!',
 			'❤️🐔❤️',
 		];
-		let index = Math.floor(Math.random() * affirmations.length);
+		let length = textOnly ? affirmations.length - 1 : affirmations.length;
+		let index = Math.floor(Math.random() * length);
 		return affirmations[index];
 	}
 
@@ -154,5 +176,3 @@ class Person {
 		}, 60 * 60 * 1000);
 	}
 }
-
-export default Person;

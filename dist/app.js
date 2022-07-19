@@ -13,7 +13,8 @@ const static_1 = __importDefault(require("@fastify/static"));
 const routes_1 = __importDefault(require("./routes"));
 const sheets_1 = __importDefault(require("./controllers/sheets"));
 const calendar_1 = __importDefault(require("./controllers/calendar"));
-const sms_1 = __importDefault(require("./controllers/sms"));
+const messages_1 = __importDefault(require("./controllers/messages"));
+const voice_1 = __importDefault(require("./controllers/voice"));
 const configPath = `${path_1.default.dirname(__dirname)}/config/config.json`;
 const config = JSON.parse(fs_1.default.readFileSync(configPath, 'utf8'));
 const app = (0, fastify_1.default)({
@@ -36,7 +37,8 @@ app.register(static_1.default, {
 app.register(routes_1.default);
 async function init() {
     sheets_1.default.configure(config.google);
-    sms_1.default.configure(config.twilio);
+    messages_1.default.configure(config.twilio);
+    voice_1.default.configure(config.twilio);
     calendar_1.default.configure(config.calendar);
     let sheets = await sheets_1.default.getInstance();
     await sheets.setup();

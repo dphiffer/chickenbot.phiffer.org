@@ -1,8 +1,15 @@
 import { GoogleSpreadsheetRow } from 'google-spreadsheet';
 import * as moment from 'moment-timezone';
-import { AssignmentUpdate } from '../types';
 import Sheets from '../controllers/sheets';
-import SMS from '../controllers/sms';
+import Messages from '../controllers/messages';
+
+export interface AssignmentUpdate {
+	date: string;
+	time: string;
+	task: string;
+	person: string;
+	status: string;
+}
 
 class Assignment {
 	sheet: string;
@@ -31,11 +38,11 @@ class Assignment {
 		this.status = 'pending';
 		await this.save();
 		this.timeout = setTimeout(async () => {
-			let sms = SMS.getInstance();
+			let messages = Messages.getInstance();
 			let sheets = await Sheets.getInstance();
 			let backup = await sheets.currentBackup();
 			if (backup) {
-				sms.sendMessage(
+				messages.sendMessage(
 					backup,
 					`Still pending after one hour: ${this.task}, assigned to ${this.person}.`
 				);

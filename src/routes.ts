@@ -1,19 +1,36 @@
 import moment from 'moment';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { IncomingMessage, AssignmentUpdate, PersonUpdate } from './types';
-import SMS from './controllers/sms';
+import { AssignmentUpdate } from './models/assignment';
+import { PersonUpdate } from './models/person';
+import Messages from './controllers/messages';
+import Voice from './controllers/voice';
 import Sheets from './controllers/sheets';
 import Calendar from './controllers/calendar';
+
+export interface WebhookUpdate {
+	secret: string;
+	assignment?: AssignmentUpdate;
+	person?: PersonUpdate;
+}
+
+export interface IncomingMessage {
+	ApiVersion: '2010-04-01';
+	AccountSid: string;
+	Body: string;
+	NumMedia: string;
+	From: string;
+	[property: string]: string;
+}
 
 async function routes(app: FastifyInstance) {
 	app.get('/', async (_, reply: FastifyReply) => {
 		let calendar = await Calendar.getInstance();
 		let sheets = await Sheets.getInstance();
-		let sms = SMS.getInstance();
+		let messages = Messages.getInstance();
 		let backup = await sheets.currentBackup();
 		let backupName = backup ? backup.name : 'Unknown';
 		return reply.view('index.ejs', {
-			phone: sms.displayPhone(sms.phone),
+			phone: messages.displayPhone(messages.phone),
 			spreadsheet_url: `https://docs.google.com/spreadsheets/d/${sheets.id}/edit`,
 			assignments: calendar.assignments,
 			backup: backupName,
@@ -22,33 +39,87 @@ async function routes(app: FastifyInstance) {
 	});
 
 	app.post(
-		'/sms',
+		'/message',
 		async (
 			request: FastifyRequest<{ Body: IncomingMessage }>,
 			reply: FastifyReply
 		) => {
-			let sms, person;
+			let messages, person;
 			let rsp = '';
 			try {
-				sms = SMS.getInstance();
-				person = await sms.validateMessage(request.body);
-				app.log.info(`SMS from ${person.name}: ${request.body.Body}`);
-				let response = await sms.handleMessage(person, request.body);
+				messages = Messages.getInstance();
+				person = await messages.validateMessage(request.body);
+				app.log.info(
+					`Message from ${person.name}: ${request.body.Body}`
+				);
+				let response = await messages.handleMessage(
+					person,
+					request.body
+				);
 				if (response) {
-					app.log.info(`SMS to ${person.name}: ${response}`);
-					rsp = sms.messageResponse(reply, response);
+					app.log.info(`Message to ${person.name}: ${response}`);
+					rsp = messages.messageResponse(reply, response);
 				}
 			} catch (err) {
 				app.log.error(err);
-				if (person && sms) {
-					sms.relayErrorToBackup(request.body, person, err as Error);
-					rsp = sms.messageResponse(
+				if (person && messages) {
+					messages.relayErrorToBackup(
+						request.body,
+						person,
+						err as Error
+					);
+					rsp = messages.messageResponse(
 						reply,
 						'Oops, sorry something went wrong.'
 					);
+					reply.status(500);
 				}
 			}
 			return rsp;
+		}
+	);
+
+	app.get(
+		'/call/:sid',
+		async (
+			request: FastifyRequest<{ Params: { sid: string } }>,
+			reply: FastifyReply
+		) => {
+			let voice = Voice.getInstance();
+			reply.header('Content-Type', 'text/xml');
+			try {
+				let rsp = await voice.getResponse(request.params.sid);
+				return rsp;
+			} catch (err) {
+				reply.status(500);
+				app.log.error(err);
+				return voice.say('Sorry, something went wrong. Goodbye!');
+			}
+		}
+	);
+
+	app.post(
+		'/call/:sid',
+		async (
+			request: FastifyRequest<{
+				Params: { sid: string };
+				Body: { digits: string };
+			}>,
+			reply: FastifyReply
+		) => {
+			let voice = Voice.getInstance();
+			reply.header('Content-Type', 'text/xml');
+			try {
+				let rsp = await voice.postResponse(
+					request.params.sid,
+					request.body.digits
+				);
+				return rsp;
+			} catch (err) {
+				reply.status(500);
+				app.log.error(err);
+				return voice.say('Sorry, something went wrong. Goodbye!');
+			}
 		}
 	);
 
