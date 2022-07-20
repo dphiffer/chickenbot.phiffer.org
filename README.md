@@ -85,7 +85,7 @@ Configure the phone number to send webhook requests to the chickenbot server for
 1. From the Google Sheet, go to the menu Extensions → Apps Script.
 2. Paste the code from the file `webhook.gs`.
 3. Replace the `url` and `secret` variables with your own values (`url` should link to the `/update` path e.g., `https://chickenbot.example.com/update`, `secret` should be the same as `webhookSecret` in the config).
-4. Configure `sendWebhook` from the `Head` deployment `from Spreadsheet` to run `on edit`.
+4. Configure `handleUpdate` from the `Head` deployment `from Spreadsheet` to run `on edit`.
 5. You will need to click through a scary looking "app security warning" to grant access to your spreadsheets (advanced → open unsafe app).
 
 ## Designated backup commands
