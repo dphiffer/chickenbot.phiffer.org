@@ -5,7 +5,7 @@ import { PersonContext, PersonStatus } from '../models/person';
 import Sheets from './sheets';
 import Person from '../models/person';
 import Task from '../models/task';
-import Assignment from '../models/assignment';
+import Assignment, { AssignmentStatus } from '../models/assignment';
 import Messages from './messages';
 import Voice from './voice';
 import app from '../app';
@@ -195,7 +195,7 @@ class Calendar {
 						time: this.getScheduleTime(task.time, date),
 						task: task.name,
 						person: person.name,
-						status: 'scheduled',
+						status: AssignmentStatus.SCHEDULED,
 					})
 				);
 				assignments.push(assignment);
@@ -271,8 +271,8 @@ class Calendar {
 			};
 			await archive.addRow(assignment);
 			if (
-				assignment.status == 'pending' ||
-				assignment.status == 'scheduled'
+				assignment.status == AssignmentStatus.PENDING ||
+				assignment.status == AssignmentStatus.SCHEDULED
 			) {
 				pending.push(assignment);
 			}
@@ -332,7 +332,7 @@ class Calendar {
 		let today = moment.default().format('YYYY-MM-DD');
 		let now = moment.default().format('HH:mm:ss');
 		for (let assignment of this.assignments) {
-			if (assignment.status != 'scheduled') {
+			if (assignment.status != AssignmentStatus.SCHEDULED) {
 				continue;
 			}
 			let dateTime = moment.default(

@@ -1,7 +1,7 @@
 import { Twilio, twiml } from 'twilio';
 import { TwilioConfig } from '../app';
 import twilio from 'twilio';
-import Assignment from '../models/assignment';
+import Assignment, { AssignmentStatus } from '../models/assignment';
 import Person from '../models/person';
 import Task from '../models/task';
 import Sheets from './sheets';
@@ -104,7 +104,7 @@ class Voice {
 		if (!call) {
 			throw new Error(`Could not find call for ${phone}`);
 		}
-		if (call.assignment.status == 'pending') {
+		if (call.assignment.status == AssignmentStatus.PENDING) {
 			let messages = Messages.getInstance();
 			messages.sendAssignment(call.person, call.assignment);
 		}

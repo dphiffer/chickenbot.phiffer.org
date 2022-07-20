@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const twilio_1 = require("twilio");
 const twilio_2 = __importDefault(require("twilio"));
+const assignment_1 = require("../models/assignment");
 const person_1 = __importDefault(require("../models/person"));
 const sheets_1 = __importDefault(require("./sheets"));
 const messages_1 = __importDefault(require("./messages"));
@@ -86,7 +87,7 @@ class Voice {
         if (!call) {
             throw new Error(`Could not find call for ${phone}`);
         }
-        if (call.assignment.status == 'pending') {
+        if (call.assignment.status == assignment_1.AssignmentStatus.PENDING) {
             let messages = messages_1.default.getInstance();
             messages.sendAssignment(call.person, call.assignment);
         }

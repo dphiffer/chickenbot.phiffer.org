@@ -26,9 +26,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.AssignmentStatus = void 0;
 const moment = __importStar(require("moment-timezone"));
 const sheets_1 = __importDefault(require("../controllers/sheets"));
 const messages_1 = __importDefault(require("../controllers/messages"));
+var AssignmentStatus;
+(function (AssignmentStatus) {
+    AssignmentStatus["SCHEDULED"] = "scheduled";
+    AssignmentStatus["PENDING"] = "pending";
+    AssignmentStatus["DONE"] = "done";
+})(AssignmentStatus = exports.AssignmentStatus || (exports.AssignmentStatus = {}));
 class Assignment {
     constructor(sheet, data) {
         this.timeout = null;
@@ -43,7 +50,7 @@ class Assignment {
         return moment.default(this.date, 'M/D').format('YYYY-MM-DD');
     }
     async setPending() {
-        this.status = 'pending';
+        this.status = AssignmentStatus.PENDING;
         await this.save();
         this.timeout = setTimeout(async () => {
             let messages = messages_1.default.getInstance();
@@ -55,7 +62,7 @@ class Assignment {
         }, 60 * 60 * 1000);
     }
     async setDone() {
-        this.status = 'done';
+        this.status = AssignmentStatus.DONE;
         this.time = moment.default().format('h:mm A');
         await this.save();
         if (this.timeout) {
@@ -64,7 +71,7 @@ class Assignment {
         }
     }
     async snooze() {
-        this.status = 'scheduled';
+        this.status = AssignmentStatus.SCHEDULED;
         this.time = moment.default().add('1', 'hours').format('h:mm A');
         await this.save();
         if (this.timeout) {

@@ -44,7 +44,7 @@ Add the names and phone numbers for people who will be caring for the chickens.
 -   **name:** the person's name
 -   **phone:** the person's phone number, formatting is flexible (e.g., `518-555-1212`)
 -   **call:** whether to call instead of text (set to `yes` to override the default, to not call)
--   **status:** assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactive`)
+-   **status:** assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactive`, `vacation`)
 -   **away:** a list of days the person is away, as a comma-separated list of [ISO 8601 formatted dates](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) (e.g., `2022-06-22, 2022-07-01`) or a list of dates with modifiers (am/pm/full) for when people are away for part of a day (e.g., `2022-07-15 full, 2022-07-16 am`)
 
 ## Google auth

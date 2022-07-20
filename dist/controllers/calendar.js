@@ -30,7 +30,7 @@ const moment = __importStar(require("moment-timezone"));
 const suntimes = __importStar(require("suntimes"));
 const person_1 = require("../models/person");
 const sheets_1 = __importDefault(require("./sheets"));
-const assignment_1 = __importDefault(require("../models/assignment"));
+const assignment_1 = __importStar(require("../models/assignment"));
 const messages_1 = __importDefault(require("./messages"));
 const voice_1 = __importDefault(require("./voice"));
 const app_1 = __importDefault(require("../app"));
@@ -192,7 +192,7 @@ class Calendar {
                     time: this.getScheduleTime(task.time, date),
                     task: task.name,
                     person: person.name,
-                    status: 'scheduled',
+                    status: assignment_1.AssignmentStatus.SCHEDULED,
                 }));
                 assignments.push(assignment);
             }
@@ -248,8 +248,8 @@ class Calendar {
                 status: row.status,
             };
             await archive.addRow(assignment);
-            if (assignment.status == 'pending' ||
-                assignment.status == 'scheduled') {
+            if (assignment.status == assignment_1.AssignmentStatus.PENDING ||
+                assignment.status == assignment_1.AssignmentStatus.SCHEDULED) {
                 pending.push(assignment);
             }
         }
@@ -300,7 +300,7 @@ class Calendar {
         let today = moment.default().format('YYYY-MM-DD');
         let now = moment.default().format('HH:mm:ss');
         for (let assignment of this.assignments) {
-            if (assignment.status != 'scheduled') {
+            if (assignment.status != assignment_1.AssignmentStatus.SCHEDULED) {
                 continue;
             }
             let dateTime = moment.default(`${assignment.date} ${assignment.time}`, 'M/D h:mm A');

@@ -8,7 +8,13 @@ export interface AssignmentUpdate {
 	time: string;
 	task: string;
 	person: string;
-	status: string;
+	status: AssignmentStatus;
+}
+
+export enum AssignmentStatus {
+	SCHEDULED = 'scheduled',
+	PENDING = 'pending',
+	DONE = 'done',
 }
 
 class Assignment {
@@ -17,7 +23,7 @@ class Assignment {
 	time: string;
 	task: string;
 	person: string;
-	status: string;
+	status: AssignmentStatus;
 
 	timeout: NodeJS.Timeout | null = null;
 
@@ -35,7 +41,7 @@ class Assignment {
 	}
 
 	async setPending() {
-		this.status = 'pending';
+		this.status = AssignmentStatus.PENDING;
 		await this.save();
 		this.timeout = setTimeout(async () => {
 			let messages = Messages.getInstance();
@@ -51,7 +57,7 @@ class Assignment {
 	}
 
 	async setDone() {
-		this.status = 'done';
+		this.status = AssignmentStatus.DONE;
 		this.time = moment.default().format('h:mm A');
 		await this.save();
 		if (this.timeout) {
@@ -61,7 +67,7 @@ class Assignment {
 	}
 
 	async snooze() {
-		this.status = 'scheduled';
+		this.status = AssignmentStatus.SCHEDULED;
 		this.time = moment.default().add('1', 'hours').format('h:mm A');
 		await this.save();
 		if (this.timeout) {
