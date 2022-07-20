@@ -44,7 +44,7 @@ Add the names and phone numbers for people who will be caring for the chickens.
 -   **name:** the person's name
 -   **phone:** the person's phone number, formatting is flexible (e.g., `518-555-1212`)
 -   **call:** whether to call instead of text (set to `yes` to override the default, to not call)
--   **status:** assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactive`, `vacation`)
+-   **status:** assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactive`, or `vacation` which is like inactive but includes someone in task scheduling)
 -   **away:** a list of days the person is away, as a comma-separated list of [ISO 8601 formatted dates](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) (e.g., `2022-06-22, 2022-07-01`) or a list of dates with modifiers (am/pm/full) for when people are away for part of a day (e.g., `2022-07-15 full, 2022-07-16 am`)
 
 ## Google auth
@@ -83,9 +83,9 @@ Configure the phone number to send webhook requests to the chickenbot server for
 ## Setup Google webhook
 
 1. From the Google Sheet, go to the menu Extensions → Apps Script.
-2. Paste the code from the file `webhook.gs`.
-3. Replace the `url` and `secret` variables with your own values (`url` should link to the `/update` path e.g., `https://chickenbot.example.com/update`, `secret` should be the same as `webhookSecret` in the config).
-4. Configure `handleUpdate` from the `Head` deployment `from Spreadsheet` to run `on edit`.
+2. Paste the code from the file `webhook.gs` into the Editor.
+3. Go to the Project Settings page and add `url`, `secret`, and `timezone` script properties (`url` should link to the `/update` path e.g., `https://chickenbot.example.com/update`, `secret` should be the same as `webhookSecret` in the config).
+4. Go to the Triggers page and select the `onEdit` function from the `Head` deployment `from Spreadsheet` to run `on edit`.
 5. You will need to click through a scary looking "app security warning" to grant access to your spreadsheets (advanced → open unsafe app).
 
 ## Designated backup commands

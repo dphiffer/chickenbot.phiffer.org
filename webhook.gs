@@ -1,8 +1,8 @@
 const properties = PropertiesService.getScriptProperties();
 const config = properties.getProperties();
 
-function handleUpdate(event) {
-	Logger.log('handleUpdate');
+function onEdit(event) {
+	Logger.log('onEdit');
 	try {
 		let sheet = SpreadsheetApp.getActiveSheet();
 		if (sheet.getName() == 'Upcoming') {
