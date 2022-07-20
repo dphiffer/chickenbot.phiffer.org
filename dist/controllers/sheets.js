@@ -89,7 +89,7 @@ class Sheets {
         if (!person) {
             throw new Error(`Person '${data.name}' not found.`);
         }
-        person.phone = data.phone;
+        person.phone = person.normalizePhone(data.phone);
         person.status = data.status;
         person.away = data.away;
         app_1.default.log.info(`Updated '${person.name}'`);
