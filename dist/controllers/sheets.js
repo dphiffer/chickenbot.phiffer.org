@@ -4,9 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const google_spreadsheet_1 = require("google-spreadsheet");
+const person_1 = require("../models/person");
 const fs_1 = require("fs");
 const calendar_1 = __importDefault(require("./calendar"));
-const person_1 = __importDefault(require("../models/person"));
+const person_2 = __importDefault(require("../models/person"));
 const task_1 = __importDefault(require("../models/task"));
 const app_1 = __importDefault(require("../app"));
 class Sheets {
@@ -47,7 +48,7 @@ class Sheets {
         let sheet = this.doc.sheetsByTitle['People'];
         let rows = await sheet.getRows();
         for (let row of rows) {
-            this.people.push(new person_1.default(this, row));
+            this.people.push(new person_2.default(this, row));
         }
         return this.people;
     }
@@ -99,10 +100,10 @@ class Sheets {
         return data.secret && Sheets.config.webhookSecret == data.secret;
     }
     getActivePeople() {
-        return this.people.filter(p => p.status == 'active' || p.status == 'backup');
+        return this.people.filter(p => p.status != person_1.PersonStatus.INACTIVE);
     }
     async currentBackup() {
-        let [person] = this.people.filter(p => p.status == 'backup');
+        let [person] = this.people.filter(p => p.status == person_1.PersonStatus.BACKUP);
         if (person) {
             return person;
         }
@@ -110,10 +111,10 @@ class Sheets {
         let sheet = this.doc.sheetsByTitle['People'];
         let rows = await sheet.getRows();
         for (let row of rows) {
-            row.status = 'backup';
+            row.status = person_1.PersonStatus.BACKUP;
             await row.save();
             [person] = this.people.filter(p => p.name == row.name);
-            person.status = 'backup';
+            person.status = person_1.PersonStatus.BACKUP;
             return person;
         }
     }

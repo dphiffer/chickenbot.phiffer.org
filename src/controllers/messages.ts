@@ -1,7 +1,7 @@
 import { FastifyReply } from 'fastify';
 import { TwilioConfig } from '../app';
 import { IncomingMessage } from '../routes';
-import { PersonContext } from '../models/person';
+import { PersonContext, PersonStatus } from '../models/person';
 import { twiml } from 'twilio';
 import fs from 'fs';
 import path from 'path';
@@ -78,7 +78,7 @@ export default class Messages {
 			rsp = await this.handleScheduleAwayTimeReply(msg, person);
 		} else if (person.context == PersonContext.SCHEDULE_AWAY_CONFIRM) {
 			rsp = await this.handleScheduleAwayConfirmReply(msg, person);
-		} else if (person.status == 'backup') {
+		} else if (person.status == PersonStatus.BACKUP) {
 			rsp = await this.handleBackupMessage(msg, person);
 		} else {
 			await this.relayToBackup(msg, person);
@@ -146,7 +146,7 @@ export default class Messages {
 			let time = await person.assignment.snooze();
 			return `Great, I'll ask again at ${time}. [reply Y at any time once you're done]`;
 		}
-		if (person.status == 'backup') {
+		if (person.status == PersonStatus.BACKUP) {
 			await this.handleBackupMessage(msg, person);
 		} else {
 			await this.relayToBackup(msg, person);
@@ -159,11 +159,13 @@ export default class Messages {
 		let sheets = await Sheets.getInstance();
 		let people = sheets.getActivePeople();
 		for (let person of people) {
-			person.context = PersonContext.SCHEDULE_START;
-			await this.sendMessage(
-				person,
-				`Hi ${person.name}, it is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]`
-			);
+			if (person.status != PersonStatus.VACATION) {
+				person.context = PersonContext.SCHEDULE_START;
+				await this.sendMessage(
+					person,
+					`Hi ${person.name}, it is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]`
+				);
+			}
 		}
 	}
 
@@ -272,7 +274,7 @@ export default class Messages {
 		let notReady: string[] = [];
 		active.forEach(p => {
 			if (p.context != PersonContext.READY) {
-				if (p.status == 'backup') {
+				if (p.status == PersonStatus.BACKUP) {
 					notReady.push('you');
 				} else {
 					notReady.push(p.name);
@@ -280,7 +282,7 @@ export default class Messages {
 			}
 		});
 		let allAreReady = notReady.length == 0;
-		if (person && person.status != 'backup') {
+		if (person && person.status != PersonStatus.BACKUP) {
 			let waiting = allAreReady
 				? ''
 				: ` Still waiting on: ${notReady.join(', ')}`;
@@ -386,7 +388,10 @@ export default class Messages {
 			msg.Body = '📷';
 		}
 		for (let person of people) {
-			if (person.status != 'backup') {
+			if (
+				person.status != PersonStatus.BACKUP &&
+				person.status != PersonStatus.VACATION
+			) {
 				await this.sendMessage(person, msg.Body, media);
 				count++;
 			}
@@ -469,7 +474,7 @@ export default class Messages {
 		error: Error
 	) {
 		msg.Body = error.message;
-		if (person.status != 'backup') {
+		if (person.status != PersonStatus.BACKUP) {
 			msg.Body = `${person.name}: ${msg.Body}\n\n---\n${error.message}`;
 		}
 		await this.relayToBackup(msg, person);
@@ -511,8 +516,8 @@ export default class Messages {
 		let [newBackup] = sheets.people.filter(
 			p => p.name.toLowerCase() == name.toLowerCase()
 		);
-		await currBackup.updateStatus('active');
-		await newBackup.updateStatus('backup');
+		await currBackup.updateStatus(PersonStatus.ACTIVE);
+		await newBackup.updateStatus(PersonStatus.BACKUP);
 		await this.sendMessage(
 			newBackup,
 			`Hi ${newBackup.name}, ${currBackup.name} has made you the new designated backup.`

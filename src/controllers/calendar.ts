@@ -1,7 +1,7 @@
 import * as moment from 'moment-timezone';
 import * as suntimes from 'suntimes';
 import { CalendarConfig } from '../app';
-import { PersonContext } from '../models/person';
+import { PersonContext, PersonStatus } from '../models/person';
 import Sheets from './sheets';
 import Person from '../models/person';
 import Task from '../models/task';
@@ -308,9 +308,17 @@ class Calendar {
 					assigned.push(`${date}: ${assignment.task}`);
 				}
 			}
+			if (assigned.length == 0) {
+				person.schedule = null;
+				continue;
+			}
+			let vacationApology =
+				person.status == PersonStatus.VACATION
+					? 'sorry to interrupt your vacation but '
+					: '';
 			person.schedule = `Hi ${
 				person.name
-			}, here are your scheduled chicken tasks for this week:\n${assigned.join(
+			}, ${vacationApology}here are your scheduled chicken tasks for this week:\n${assigned.join(
 				'\n'
 			)}`;
 		}

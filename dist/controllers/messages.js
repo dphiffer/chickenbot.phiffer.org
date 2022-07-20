@@ -82,7 +82,7 @@ class Messages {
         else if (person.context == person_1.PersonContext.SCHEDULE_AWAY_CONFIRM) {
             rsp = await this.handleScheduleAwayConfirmReply(msg, person);
         }
-        else if (person.status == 'backup') {
+        else if (person.status == person_1.PersonStatus.BACKUP) {
             rsp = await this.handleBackupMessage(msg, person);
         }
         else {
@@ -153,7 +153,7 @@ class Messages {
             let time = await person.assignment.snooze();
             return `Great, I'll ask again at ${time}. [reply Y at any time once you're done]`;
         }
-        if (person.status == 'backup') {
+        if (person.status == person_1.PersonStatus.BACKUP) {
             await this.handleBackupMessage(msg, person);
         }
         else {
@@ -166,8 +166,10 @@ class Messages {
         let sheets = await sheets_1.default.getInstance();
         let people = sheets.getActivePeople();
         for (let person of people) {
-            person.context = person_1.PersonContext.SCHEDULE_START;
-            await this.sendMessage(person, `Hi ${person.name}, it is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]`);
+            if (person.status != person_1.PersonStatus.VACATION) {
+                person.context = person_1.PersonContext.SCHEDULE_START;
+                await this.sendMessage(person, `Hi ${person.name}, it is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]`);
+            }
         }
     }
     async scheduleQuick() {
@@ -276,7 +278,7 @@ class Messages {
         let notReady = [];
         active.forEach(p => {
             if (p.context != person_1.PersonContext.READY) {
-                if (p.status == 'backup') {
+                if (p.status == person_1.PersonStatus.BACKUP) {
                     notReady.push('you');
                 }
                 else {
@@ -285,7 +287,7 @@ class Messages {
             }
         });
         let allAreReady = notReady.length == 0;
-        if (person && person.status != 'backup') {
+        if (person && person.status != person_1.PersonStatus.BACKUP) {
             let waiting = allAreReady
                 ? ''
                 : ` Still waiting on: ${notReady.join(', ')}`;
@@ -379,7 +381,8 @@ class Messages {
             msg.Body = '📷';
         }
         for (let person of people) {
-            if (person.status != 'backup') {
+            if (person.status != person_1.PersonStatus.BACKUP &&
+                person.status != person_1.PersonStatus.VACATION) {
                 await this.sendMessage(person, msg.Body, media);
                 count++;
             }
@@ -450,7 +453,7 @@ class Messages {
     }
     async relayErrorToBackup(msg, person, error) {
         msg.Body = error.message;
-        if (person.status != 'backup') {
+        if (person.status != person_1.PersonStatus.BACKUP) {
             msg.Body = `${person.name}: ${msg.Body}\n\n---\n${error.message}`;
         }
         await this.relayToBackup(msg, person);
@@ -488,8 +491,8 @@ class Messages {
         }
         let name = match[1];
         let [newBackup] = sheets.people.filter(p => p.name.toLowerCase() == name.toLowerCase());
-        await currBackup.updateStatus('active');
-        await newBackup.updateStatus('backup');
+        await currBackup.updateStatus(person_1.PersonStatus.ACTIVE);
+        await newBackup.updateStatus(person_1.PersonStatus.BACKUP);
         await this.sendMessage(newBackup, `Hi ${newBackup.name}, ${currBackup.name} has made you the new designated backup.`);
         return `${newBackup.name} has been notified that they are now the designated backup.`;
     }

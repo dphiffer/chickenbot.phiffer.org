@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PersonContext = void 0;
+exports.PersonStatus = exports.PersonContext = void 0;
 const moment_timezone_1 = __importDefault(require("moment-timezone"));
 const sheets_1 = __importDefault(require("../controllers/sheets"));
 const timers_1 = require("timers");
@@ -20,6 +20,13 @@ var PersonContext;
     PersonContext["SCHEDULE_AWAY_TIME"] = "schedule-away-time";
     PersonContext["SCHEDULE_AWAY_CONFIRM"] = "schedule-away-confirm";
 })(PersonContext = exports.PersonContext || (exports.PersonContext = {}));
+var PersonStatus;
+(function (PersonStatus) {
+    PersonStatus["ACTIVE"] = "active";
+    PersonStatus["BACKUP"] = "backup";
+    PersonStatus["INACTIVE"] = "inactive";
+    PersonStatus["VACATION"] = "vacation";
+})(PersonStatus = exports.PersonStatus || (exports.PersonStatus = {}));
 class Person {
     constructor(sheets, row) {
         this.schedule = null;

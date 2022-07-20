@@ -282,7 +282,14 @@ class Calendar {
                     assigned.push(`${date}: ${assignment.task}`);
                 }
             }
-            person.schedule = `Hi ${person.name}, here are your scheduled chicken tasks for this week:\n${assigned.join('\n')}`;
+            if (assigned.length == 0) {
+                person.schedule = null;
+                continue;
+            }
+            let vacationApology = person.status == person_1.PersonStatus.VACATION
+                ? 'sorry to interrupt your vacation but '
+                : '';
+            person.schedule = `Hi ${person.name}, ${vacationApology}here are your scheduled chicken tasks for this week:\n${assigned.join('\n')}`;
         }
         return people;
     }

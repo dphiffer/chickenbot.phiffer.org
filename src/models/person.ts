@@ -10,7 +10,7 @@ export interface PersonUpdate {
 	name: string;
 	phone: string;
 	call: string;
-	status: string;
+	status: PersonStatus;
 	away: string;
 }
 
@@ -26,11 +26,18 @@ export enum PersonContext {
 	SCHEDULE_AWAY_CONFIRM = 'schedule-away-confirm',
 }
 
+export enum PersonStatus {
+	ACTIVE = 'active',
+	BACKUP = 'backup',
+	INACTIVE = 'inactive',
+	VACATION = 'vacation',
+}
+
 export default class Person {
 	name: string;
 	phone: string;
 	call: boolean;
-	status: string;
+	status: PersonStatus;
 	away: string;
 
 	schedule: null | string = null;
@@ -70,7 +77,7 @@ export default class Person {
 		return affirmations[index];
 	}
 
-	async updateStatus(status: string) {
+	async updateStatus(status: PersonStatus) {
 		let sheets = await Sheets.getInstance();
 		this.status = status;
 		let sheet = sheets.doc.sheetsByTitle['People'];

@@ -2,7 +2,7 @@ import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { SheetsConfig } from '../app';
 import { WebhookUpdate } from '../routes';
 import { AssignmentUpdate } from '../models/assignment';
-import { PersonUpdate } from '../models/person';
+import { PersonUpdate, PersonStatus } from '../models/person';
 import { readFileSync } from 'fs';
 import Calendar from './calendar';
 import Person from '../models/person';
@@ -120,13 +120,11 @@ class Sheets {
 	}
 
 	getActivePeople() {
-		return this.people.filter(
-			p => p.status == 'active' || p.status == 'backup'
-		);
+		return this.people.filter(p => p.status != PersonStatus.INACTIVE);
 	}
 
 	async currentBackup() {
-		let [person] = this.people.filter(p => p.status == 'backup');
+		let [person] = this.people.filter(p => p.status == PersonStatus.BACKUP);
 		if (person) {
 			return person;
 		}
@@ -134,10 +132,10 @@ class Sheets {
 		let sheet = this.doc.sheetsByTitle['People'];
 		let rows = await sheet.getRows();
 		for (let row of rows) {
-			row.status = 'backup';
+			row.status = PersonStatus.BACKUP;
 			await row.save();
 			[person] = this.people.filter(p => p.name == row.name);
-			person.status = 'backup';
+			person.status = PersonStatus.BACKUP;
 			return person;
 		}
 	}
