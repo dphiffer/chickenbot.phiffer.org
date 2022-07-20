@@ -1,8 +1,8 @@
 # 🐔 chickenbot
 
-_Chicken care task rotation using a Google Sheet and Twilio_
+_Group task scheduling and reminders using Google Sheets and Twilio_
 
-This software supports a small cohort of neighbors who share responsibility caring for a flock of chickens. It is somewhat flexible, but it does make some assumptions. There must be at least two people involved, tasks can't be more frequent than once per day, the designated backup person is assumed to understand they're the backstop for any given task. An instance of the bot is running at [chickenbot.phiffer.org](https://chickenbot.phiffer.org/).
+This software supports a small cohort of neighbors who share responsibility caring for a flock of chickens. It is somewhat flexible, but it does make some assumptions. There must be at least two people involved, tasks can't be more frequent than once per day, and the designated backup person is assumed to understand that they're responsible for making sure that tasks with an uncertain status are actually completed. An instance of the bot is running at [chickenbot.phiffer.org](https://chickenbot.phiffer.org/).
 
 ## Google Sheet
 
@@ -96,6 +96,7 @@ From the designated backup phone:
 -   Send `announce: [message]` to relay a message to everyone (or just `announce` to announce all subsequent messages, for one hour)
 -   Send `[name]: [message]` to relay a message to a particular person by name.
 -   Send `backup: [name]` to reassign the designated backup to someone else.
+-   Send `ready` to reset things so that scheduling can proceed.
 
 ## Scheduling tasks
 
