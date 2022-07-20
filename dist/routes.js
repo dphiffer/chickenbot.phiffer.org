@@ -46,11 +46,11 @@ async function routes(app) {
         }
         return rsp;
     });
-    app.get('/call/:sid', async (request, reply) => {
+    app.post('/call/:phone', async (request, reply) => {
         let voice = voice_1.default.getInstance();
         reply.header('Content-Type', 'text/xml');
         try {
-            let rsp = await voice.getResponse(request.params.sid);
+            let rsp = await voice.handlePrompt(request.params.phone);
             return rsp;
         }
         catch (err) {
@@ -59,17 +59,29 @@ async function routes(app) {
             return voice.say('Sorry, something went wrong. Goodbye!');
         }
     });
-    app.post('/call/:sid', async (request, reply) => {
+    app.post('/call/:phone/response', async (request, reply) => {
         let voice = voice_1.default.getInstance();
         reply.header('Content-Type', 'text/xml');
         try {
-            let rsp = await voice.postResponse(request.params.sid, request.body.digits);
+            let rsp = await voice.handleResponse(request.params.phone, request.body.Digits);
             return rsp;
         }
         catch (err) {
             reply.status(500);
             app.log.error(err);
             return voice.say('Sorry, something went wrong. Goodbye!');
+        }
+    });
+    app.post('/call/:phone/status', async (request, reply) => {
+        try {
+            let voice = voice_1.default.getInstance();
+            await voice.handleStatus(request.params.phone, request.body.CallStatus);
+            return {
+                ok: true,
+            };
+        }
+        catch (err) {
+            app.log.error(err);
         }
     });
     app.post('/update', async (request, reply) => {

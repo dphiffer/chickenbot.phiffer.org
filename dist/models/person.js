@@ -30,7 +30,7 @@ class Person {
         this.scheduleDayIndex = 0;
         this.name = row.name;
         this.phone = this.normalizePhone(row.phone);
-        this.call = row.call.strToLower() == 'yes';
+        this.call = row.call == 'yes';
         this.status = row.status;
         this.away = row.away || '';
     }

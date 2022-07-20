@@ -10,7 +10,7 @@ This software supports a small cohort of neighbors who share responsibility cari
 2. Setup 4 sheets: Upcoming, Archive, Tasks, People.
 3. The Upcoming and Archive sheets should each have columns: date, time, task, person, status.
 4. The Tasks sheet should have columns: name, question, frequency, time.
-5. The People sheet should have columns: name, phone, status, away.
+5. The People sheet should have columns: name, phone, call, status, away.
 
 Date and time columns need to be formatted like "6/21" and "7:16 PM" for the matching logic to work.
 
@@ -43,6 +43,7 @@ Add the names and phone numbers for people who will be caring for the chickens.
 
 -   **name:** the person's name
 -   **phone:** the person's phone number, formatting is flexible (e.g., `518-555-1212`)
+-   **call:** whether to call instead of text (set to `yes` to override the default, to not call)
 -   **status:** assign `active` to include a person in the rotation for a given week (other possible values: `backup`, `inactive`)
 -   **away:** a list of days the person is away, as a comma-separated list of [ISO 8601 formatted dates](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) (e.g., `2022-06-22, 2022-07-01`) or a list of dates with modifiers (am/pm/full) for when people are away for part of a day (e.g., `2022-07-15 full, 2022-07-16 am`)
 
@@ -77,7 +78,7 @@ npm install
 
 ## Setup Twilio webhook
 
-Configure the phone number to send webhook requests to the chickenbot server for incoming SMS messages. The URL should include a fully qualified domain followed by `/sms`, something like `https://chickenbot.example.com/sms`.
+Configure the phone number to send webhook requests to the chickenbot server for incoming SMS messages. The URL should include a fully qualified domain followed by `/message`, something like `https://chickenbot.example.com/message`.
 
 ## Setup Google webhook
 

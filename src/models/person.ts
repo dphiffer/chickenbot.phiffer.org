@@ -43,7 +43,7 @@ export default class Person {
 	constructor(sheets: Sheets, row: GoogleSpreadsheetRow) {
 		this.name = row.name;
 		this.phone = this.normalizePhone(row.phone);
-		this.call = row.call.strToLower() == 'yes';
+		this.call = row.call == 'yes';
 		this.status = row.status;
 		this.away = row.away || '';
 	}

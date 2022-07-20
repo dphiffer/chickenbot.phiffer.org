@@ -1,11 +1,13 @@
 import * as moment from 'moment-timezone';
 import * as suntimes from 'suntimes';
 import { CalendarConfig } from '../app';
+import { PersonContext } from '../models/person';
 import Sheets from './sheets';
 import Person from '../models/person';
 import Task from '../models/task';
 import Assignment from '../models/assignment';
-import SMS from './messages';
+import Messages from './messages';
+import Voice from './voice';
 import app from '../app';
 
 class Calendar {
@@ -84,7 +86,6 @@ class Calendar {
 		setInterval(async () => {
 			await this.checkAssignments();
 		}, 60 * 1000);
-		await this.checkAssignments();
 		return this;
 	}
 
@@ -339,8 +340,29 @@ class Calendar {
 			}
 		}
 		if (assignmentsDue.length > 0) {
-			let sms = SMS.getInstance();
-			await sms.sendAssignments(assignmentsDue);
+			await this.sendAssignments(assignmentsDue);
+		}
+	}
+
+	async sendAssignments(due: Assignment[]) {
+		let sheets = await Sheets.getInstance();
+		let people = sheets.getActivePeople();
+		let messages = Messages.getInstance();
+		let voice = Voice.getInstance();
+		for (let assignment of due) {
+			let [person] = people.filter(p => p.name == assignment.person);
+			let [task] = sheets.tasks.filter(t => t.name == assignment.task);
+			if (!person || !task) {
+				continue;
+			}
+			person.assignment = assignment;
+			person.context = PersonContext.ASSIGNMENT;
+			await assignment.setPending();
+			if (person.call) {
+				voice.call(person);
+			} else {
+				messages.sendAssignment(person, assignment);
+			}
 		}
 	}
 }

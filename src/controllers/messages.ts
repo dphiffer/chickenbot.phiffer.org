@@ -120,23 +120,16 @@ export default class Messages {
 		return rsp;
 	}
 
-	async sendAssignments(due: Assignment[]) {
+	async sendAssignment(person: Person, assignment: Assignment) {
 		let sheets = await Sheets.getInstance();
-		let people = sheets.getActivePeople();
-		for (let assignment of due) {
-			let [person] = people.filter(p => p.name == assignment.person);
-			let [task] = sheets.tasks.filter(t => t.name == assignment.task);
-			if (!person || !task) {
-				continue;
-			}
-			this.sendMessage(
-				person,
-				`Hi ${person.name}, ${task.question} [reply Y if you're done or Snooze for more time]`
-			);
-			person.assignment = assignment;
-			person.context = PersonContext.ASSIGNMENT;
-			await assignment.setPending();
+		let [task] = sheets.tasks.filter(t => t.name == assignment.task);
+		if (!task) {
+			throw new Error(`Could not find task ${assignment.task}`);
 		}
+		this.sendMessage(
+			person,
+			`Hi ${person.name}, ${task.question} [reply Y if you're done or Snooze for more time]`
+		);
 	}
 
 	async handleAssignmentReply(msg: IncomingMessage, person: Person) {

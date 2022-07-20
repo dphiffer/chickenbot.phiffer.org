@@ -79,16 +79,16 @@ async function routes(app: FastifyInstance) {
 		}
 	);
 
-	app.get(
-		'/call/:sid',
+	app.post(
+		'/call/:phone',
 		async (
-			request: FastifyRequest<{ Params: { sid: string } }>,
+			request: FastifyRequest<{ Params: { phone: string } }>,
 			reply: FastifyReply
 		) => {
 			let voice = Voice.getInstance();
 			reply.header('Content-Type', 'text/xml');
 			try {
-				let rsp = await voice.getResponse(request.params.sid);
+				let rsp = await voice.handlePrompt(request.params.phone);
 				return rsp;
 			} catch (err) {
 				reply.status(500);
@@ -99,26 +99,50 @@ async function routes(app: FastifyInstance) {
 	);
 
 	app.post(
-		'/call/:sid',
+		'/call/:phone/response',
 		async (
 			request: FastifyRequest<{
-				Params: { sid: string };
-				Body: { digits: string };
+				Params: { phone: string };
+				Body: { Digits: string };
 			}>,
 			reply: FastifyReply
 		) => {
 			let voice = Voice.getInstance();
 			reply.header('Content-Type', 'text/xml');
 			try {
-				let rsp = await voice.postResponse(
-					request.params.sid,
-					request.body.digits
+				let rsp = await voice.handleResponse(
+					request.params.phone,
+					request.body.Digits
 				);
 				return rsp;
 			} catch (err) {
 				reply.status(500);
 				app.log.error(err);
 				return voice.say('Sorry, something went wrong. Goodbye!');
+			}
+		}
+	);
+
+	app.post(
+		'/call/:phone/status',
+		async (
+			request: FastifyRequest<{
+				Params: { phone: string };
+				Body: { CallStatus: string };
+			}>,
+			reply: FastifyReply
+		) => {
+			try {
+				let voice = Voice.getInstance();
+				await voice.handleStatus(
+					request.params.phone,
+					request.body.CallStatus
+				);
+				return {
+					ok: true,
+				};
+			} catch (err) {
+				app.log.error(err);
 			}
 		}
 	);

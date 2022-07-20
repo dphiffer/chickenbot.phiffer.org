@@ -28,9 +28,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const moment = __importStar(require("moment-timezone"));
 const suntimes = __importStar(require("suntimes"));
+const person_1 = require("../models/person");
 const sheets_1 = __importDefault(require("./sheets"));
 const assignment_1 = __importDefault(require("../models/assignment"));
 const messages_1 = __importDefault(require("./messages"));
+const voice_1 = __importDefault(require("./voice"));
 const app_1 = __importDefault(require("../app"));
 class Calendar {
     constructor() {
@@ -95,7 +97,6 @@ class Calendar {
         setInterval(async () => {
             await this.checkAssignments();
         }, 60 * 1000);
-        await this.checkAssignments();
         return this;
     }
     async loadAssignments(sheetTitle) {
@@ -303,8 +304,29 @@ class Calendar {
             }
         }
         if (assignmentsDue.length > 0) {
-            let sms = messages_1.default.getInstance();
-            await sms.sendAssignments(assignmentsDue);
+            await this.sendAssignments(assignmentsDue);
+        }
+    }
+    async sendAssignments(due) {
+        let sheets = await sheets_1.default.getInstance();
+        let people = sheets.getActivePeople();
+        let messages = messages_1.default.getInstance();
+        let voice = voice_1.default.getInstance();
+        for (let assignment of due) {
+            let [person] = people.filter(p => p.name == assignment.person);
+            let [task] = sheets.tasks.filter(t => t.name == assignment.task);
+            if (!person || !task) {
+                continue;
+            }
+            person.assignment = assignment;
+            person.context = person_1.PersonContext.ASSIGNMENT;
+            await assignment.setPending();
+            if (person.call) {
+                voice.call(person);
+            }
+            else {
+                messages.sendAssignment(person, assignment);
+            }
         }
     }
 }
