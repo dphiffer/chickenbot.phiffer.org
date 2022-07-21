@@ -6,7 +6,7 @@ This software supports a small cohort of neighbors who share responsibility cari
 
 ## Google Sheet
 
-1. Make a new Google Sheet.
+1. Make a new Google Sheet. (You can also make a copy of [this template](https://docs.google.com/spreadsheets/d/19DqJlX8DysBDObseu9c4sgy1vVTdOokGKfbkOAr77Q0/edit).)
 2. Setup 4 sheets: Upcoming, Archive, Tasks, People.
 3. The Upcoming and Archive sheets should each have columns: date, time, task, person, status.
 4. The Tasks sheet should have columns: name, question, frequency, time.
