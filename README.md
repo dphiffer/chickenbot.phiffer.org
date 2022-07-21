@@ -19,7 +19,7 @@ Date and time columns need to be formatted like "6/21" and "7:16 PM" for the mat
 The list of tasks get assigned to all the active people involved for a given week.
 
 -   **name:** is how the task appears in the schedule
--   **question:** gets sent in the reminder text message, i.e., `Hi [name], [question]`
+-   **question:** gets sent in the reminder text message, i.e., `Hi [person], [question]`
 -   **frequency:** how often the task happens (`1` = every day, `7` = every week)
 -   **time:** when the reminder gets sent (e.g., `8:00 AM` or `sunset` to schedule 10 minutes after when the sun sets)
 
