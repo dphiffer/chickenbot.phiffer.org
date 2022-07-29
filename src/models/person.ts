@@ -24,6 +24,7 @@ export enum PersonContext {
 	SCHEDULE_AWAY_FULL = 'schedule-away-full',
 	SCHEDULE_AWAY_TIME = 'schedule-away-time',
 	SCHEDULE_AWAY_CONFIRM = 'schedule-away-confirm',
+	SCHEDULE_SEND = 'schedule-send',
 }
 
 export enum PersonStatus {
@@ -120,6 +121,26 @@ export default class Person {
 				return moment(date, 'YYYY-MM-DD').format('ddd M/D') + suffix;
 			})
 			.join(', ');
+	}
+
+	setSchedule(assignments: Assignment[]) {
+		let assigned = assignments.map(a => {
+			let date = moment(a.date, 'M/D').format('ddd M/D');
+			return `${date}: ${a.task}`;
+		});
+		if (assigned.length == 0) {
+			this.schedule = null;
+			return;
+		}
+		let vacationApology =
+			this.status == PersonStatus.VACATION
+				? 'sorry to interrupt your vacation but '
+				: '';
+		this.schedule = `Hi ${
+			this.name
+		}, ${vacationApology}here are your scheduled chicken tasks for this week:\n${assigned.join(
+			'\n'
+		)}`;
 	}
 
 	isAway(date: string, time: string) {

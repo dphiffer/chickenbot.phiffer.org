@@ -92,14 +92,17 @@ export default class Messages {
 		let announceRegex = this.getAnnounceRegex();
 		let backupRegex = await this.getBackupRegex();
 		let rsp = '';
+		app.log.info(`Current context: ${backup.context}`);
 		if (msg.Body.trim().toLowerCase() === 'schedule!') {
-			await this.scheduleQuick();
+			rsp = await this.scheduleQuick();
 		} else if (sms == 'schedule') {
 			await this.scheduleStart();
 		} else if (sms == 'announce') {
 			await this.setAnnounceContext(backup);
 		} else if (sms == 'ready') {
 			rsp = await this.setReadyContext(backup);
+		} else if (backup.context == PersonContext.SCHEDULE_SEND) {
+			rsp = await this.handleScheduleSendReply(msg, backup);
 		} else if (backup.context == PersonContext.ANNOUNCE) {
 			rsp = await this.sendAnnouncement(msg, backup);
 		} else if (sms.match(namesRegex)) {
@@ -170,12 +173,14 @@ export default class Messages {
 	}
 
 	async scheduleQuick() {
+		this.isScheduling = true;
 		let sheets = await Sheets.getInstance();
 		let people = sheets.getActivePeople();
 		for (let person of people) {
 			person.context = PersonContext.READY;
 		}
-		await this.scheduleIfAllAreReady();
+		this.scheduleIfAllAreReady();
+		return 'Creating a quick schedule.';
 	}
 
 	async handleScheduleStartReply(msg: IncomingMessage, person: Person) {
@@ -295,12 +300,35 @@ export default class Messages {
 			}
 		}
 		if (allAreReady) {
-			this.isScheduling = false;
 			let calendar = await Calendar.getInstance();
-			calendar.scheduleTasks().then(this.scheduleSend.bind(this));
+			calendar.scheduleTasks().then(async () => {
+				let backup = await sheets.currentBackup();
+				if (backup) {
+					backup.context = PersonContext.SCHEDULE_SEND;
+					this.sendMessage(
+						backup,
+						'Assignment schedules have been created, send them out? [Reply Y or N]'
+					);
+				}
+			});
 			return '';
 		}
 		return 'Thank you, I will send your schedule as soon as I hear back from everyone.';
+	}
+
+	async handleScheduleSendReply(msg: IncomingMessage, backup: Person) {
+		let sms = this.normalizeBody(msg);
+		if (Messages.yesReplies.indexOf(sms) > -1) {
+			this.scheduleSend();
+			this.isScheduling = false;
+			backup.context = PersonContext.READY;
+			return 'Great, I will send schedules out now.';
+		} else if (Messages.noReplies.indexOf(sms) > -1) {
+			backup.context = PersonContext.READY;
+			return `Not sending. You can remake the schedule with 'schedule!' (the exclamation point skips the process of asking when people are away).`;
+		} else {
+			return 'Sorry, please respond Y or N.';
+		}
 	}
 
 	async scheduleSend() {

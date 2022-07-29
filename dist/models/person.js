@@ -19,6 +19,7 @@ var PersonContext;
     PersonContext["SCHEDULE_AWAY_FULL"] = "schedule-away-full";
     PersonContext["SCHEDULE_AWAY_TIME"] = "schedule-away-time";
     PersonContext["SCHEDULE_AWAY_CONFIRM"] = "schedule-away-confirm";
+    PersonContext["SCHEDULE_SEND"] = "schedule-send";
 })(PersonContext = exports.PersonContext || (exports.PersonContext = {}));
 var PersonStatus;
 (function (PersonStatus) {
@@ -105,6 +106,20 @@ class Person {
             return (0, moment_timezone_1.default)(date, 'YYYY-MM-DD').format('ddd M/D') + suffix;
         })
             .join(', ');
+    }
+    setSchedule(assignments) {
+        let assigned = assignments.map(a => {
+            let date = (0, moment_timezone_1.default)(a.date, 'M/D').format('ddd M/D');
+            return `${date}: ${a.task}`;
+        });
+        if (assigned.length == 0) {
+            this.schedule = null;
+            return;
+        }
+        let vacationApology = this.status == PersonStatus.VACATION
+            ? 'sorry to interrupt your vacation but '
+            : '';
+        this.schedule = `Hi ${this.name}, ${vacationApology}here are your scheduled chicken tasks for this week:\n${assigned.join('\n')}`;
     }
     isAway(date, time) {
         let awayDays = this.away.split(', ');

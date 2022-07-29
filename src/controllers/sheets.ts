@@ -8,6 +8,7 @@ import Calendar from './calendar';
 import Person from '../models/person';
 import Task from '../models/task';
 import app from '../app';
+import Messages from './messages';
 
 class Sheets {
 	private static config: SheetsConfig;
@@ -100,6 +101,20 @@ class Sheets {
 		app.log.info(
 			`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`
 		);
+		let messages = Messages.getInstance();
+		if (messages.isScheduling) {
+			app.log.info('is scheduling');
+			let [person] = this.people.filter(p => p.name == data.person);
+			if (person) {
+				app.log.info('found person');
+				let assigned = calendar.assignments.filter(
+					a => a.person == data.person
+				);
+				console.log(assigned);
+				app.log.info(`Updated ${person.name}'s schedule`);
+				person.setSchedule(assigned);
+			}
+		}
 		return assignment;
 	}
 

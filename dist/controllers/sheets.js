@@ -10,6 +10,7 @@ const calendar_1 = __importDefault(require("./calendar"));
 const person_2 = __importDefault(require("../models/person"));
 const task_1 = __importDefault(require("../models/task"));
 const app_1 = __importDefault(require("../app"));
+const messages_1 = __importDefault(require("./messages"));
 class Sheets {
     constructor() {
         this.people = [];
@@ -83,6 +84,18 @@ class Sheets {
         assignment.person = data.person;
         assignment.status = data.status;
         app_1.default.log.info(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
+        let messages = messages_1.default.getInstance();
+        if (messages.isScheduling) {
+            app_1.default.log.info('is scheduling');
+            let [person] = this.people.filter(p => p.name == data.person);
+            if (person) {
+                app_1.default.log.info('found person');
+                let assigned = calendar.assignments.filter(a => a.person == data.person);
+                console.log(assigned);
+                app_1.default.log.info(`Updated ${person.name}'s schedule`);
+                person.setSchedule(assigned);
+            }
+        }
         return assignment;
     }
     async updatePerson(data) {

@@ -1,7 +1,9 @@
+import { GoogleSpreadsheetRow } from 'google-spreadsheet';
 import * as moment from 'moment-timezone';
 import * as suntimes from 'suntimes';
 import { CalendarConfig } from '../app';
 import { PersonContext, PersonStatus } from '../models/person';
+import { AssignmentUpdate } from '../models/assignment';
 import Sheets from './sheets';
 import Person from '../models/person';
 import Task from '../models/task';
@@ -95,14 +97,21 @@ class Calendar {
 		let sheet = sheets.doc.sheetsByTitle[sheetTitle];
 		let rows = await sheet.getRows();
 		for (let row of rows) {
-			let assignment = this.addAssignment(sheetTitle, row);
+			let update = {
+				date: row.date,
+				time: row.time,
+				task: row.task,
+				person: row.person,
+				status: row.status,
+			};
+			let assignment = this.addAssignment(sheetTitle, update);
 			loaded.push(assignment);
 		}
 		return loaded;
 	}
 
-	addAssignment(sheet: string, row: any) {
-		let assignment = new Assignment(sheet, row);
+	addAssignment(sheet: string, data: AssignmentUpdate) {
+		let assignment = new Assignment(sheet, data);
 		this.assignments.push(assignment);
 		return assignment;
 	}
@@ -113,6 +122,7 @@ class Calendar {
 				return assignment;
 			}
 		}
+		return null;
 	}
 
 	async scheduleTasks() {
@@ -122,9 +132,10 @@ class Calendar {
 		await this.setupQueue();
 		await this.markTaskDates();
 		await this.archiveAssignments();
-		let assignments = await this.scheduleForWeek();
-		await this.addUpcoming(assignments);
-		await this.setAssigned(assignments);
+		await this.scheduleForWeek();
+		app.log.info(this.assignments);
+		await this.addUpcoming();
+		await this.setAssigned();
 	}
 
 	async setupQueue() {
@@ -169,10 +180,8 @@ class Calendar {
 		let assignments: Assignment[] = [];
 		for (let i = 0; i < 7; i++) {
 			let date = now.add(1, 'days');
-			let scheduled = await this.scheduleForDate(date);
-			assignments = [...assignments, ...scheduled];
+			await this.scheduleForDate(date);
 		}
-		return assignments;
 	}
 
 	async scheduleForDate(date: moment.Moment) {
@@ -180,7 +189,6 @@ class Calendar {
 		let people = sheets.getActivePeople();
 		let iso8601 = 'YYYY-MM-DD';
 		let locale = 'M/D';
-		let assignments: Assignment[] = [];
 		for (let task of sheets.tasks) {
 			if (task.nextRun && task.nextRun <= date.format(iso8601)) {
 				let person = await this.selectPerson(
@@ -188,21 +196,16 @@ class Calendar {
 					people,
 					date.format(iso8601)
 				);
-				let assignment = this.addAssignment(
-					'Upcoming',
-					new Assignment('Upcoming', {
-						date: date.format(locale),
-						time: this.getScheduleTime(task.time, date),
-						task: task.name,
-						person: person.name,
-						status: AssignmentStatus.SCHEDULED,
-					})
-				);
-				assignments.push(assignment);
+				this.addAssignment('Upcoming', {
+					date: date.format(locale),
+					time: this.getScheduleTime(task.time, date),
+					task: task.name,
+					person: person.name,
+					status: AssignmentStatus.SCHEDULED,
+				});
 			}
 		}
 		this.markTaskDates();
-		return assignments;
 	}
 
 	async selectPerson(
@@ -258,7 +261,6 @@ class Calendar {
 		let sheets = await Sheets.getInstance();
 		let upcoming = sheets.doc.sheetsByTitle['Upcoming'];
 		let archive = sheets.doc.sheetsByTitle['Archive'];
-		let today = moment.default().format('M/D');
 		let rows = await upcoming.getRows();
 		let pending = [];
 		for (let row of rows) {
@@ -279,12 +281,16 @@ class Calendar {
 		}
 		await upcoming.clearRows();
 		await upcoming.addRows(pending);
+		this.assignments = [];
+		for (let assignment of pending) {
+			this.addAssignment('Upcoming', assignment);
+		}
 	}
 
-	async addUpcoming(assignments: Assignment[]) {
+	async addUpcoming() {
 		let sheets = await Sheets.getInstance();
 		let sheet = sheets.doc.sheetsByTitle['Upcoming'];
-		for (let assignment of assignments) {
+		for (let assignment of this.assignments) {
 			await sheet.addRow({
 				date: assignment.date,
 				time: assignment.time,
@@ -295,32 +301,14 @@ class Calendar {
 		}
 	}
 
-	async setAssigned(assignments: Assignment[]) {
+	async setAssigned() {
 		let sheets = await Sheets.getInstance();
 		let people = sheets.getActivePeople();
 		for (let person of people) {
-			let assigned: string[] = [];
-			for (let assignment of assignments) {
-				if (assignment.person == person.name) {
-					let date = moment
-						.default(assignment.date, 'M/D')
-						.format('ddd M/D');
-					assigned.push(`${date}: ${assignment.task}`);
-				}
-			}
-			if (assigned.length == 0) {
-				person.schedule = null;
-				continue;
-			}
-			let vacationApology =
-				person.status == PersonStatus.VACATION
-					? 'sorry to interrupt your vacation but '
-					: '';
-			person.schedule = `Hi ${
-				person.name
-			}, ${vacationApology}here are your scheduled chicken tasks for this week:\n${assigned.join(
-				'\n'
-			)}`;
+			let assigned = this.assignments.filter(
+				a => a.person == person.name
+			);
+			person.setSchedule(assigned);
 		}
 		return people;
 	}
