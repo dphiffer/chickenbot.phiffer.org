@@ -95,6 +95,10 @@ class Sheets {
 		if (!assignment) {
 			throw new Error('No matching assignment found');
 		}
+		let previousPerson: string = '';
+		if (assignment.person != data.person) {
+			previousPerson = assignment.person;
+		}
 		assignment.time = data.time;
 		assignment.person = data.person;
 		assignment.status = data.status;
@@ -102,17 +106,22 @@ class Sheets {
 			`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`
 		);
 		let messages = Messages.getInstance();
-		if (messages.isScheduling) {
-			app.log.info('is scheduling');
+		if (messages.isScheduling && previousPerson) {
 			let [person] = this.people.filter(p => p.name == data.person);
 			if (person) {
-				app.log.info('found person');
 				let assigned = calendar.assignments.filter(
 					a => a.person == data.person
 				);
-				console.log(assigned);
-				app.log.info(`Updated ${person.name}'s schedule`);
 				person.setSchedule(assigned);
+				app.log.info(`Updated schedule for ${data.person}`);
+			}
+			[person] = this.people.filter(p => p.name == previousPerson);
+			if (person) {
+				let assigned = calendar.assignments.filter(
+					a => a.person == previousPerson
+				);
+				person.setSchedule(assigned);
+				app.log.info(`Updated schedule for ${previousPerson}`);
 			}
 		}
 		return assignment;

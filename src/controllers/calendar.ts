@@ -133,7 +133,6 @@ class Calendar {
 		await this.markTaskDates();
 		await this.archiveAssignments();
 		await this.scheduleForWeek();
-		app.log.info(this.assignments);
 		await this.addUpcoming();
 		await this.setAssigned();
 	}
