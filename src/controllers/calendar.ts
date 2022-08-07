@@ -278,7 +278,6 @@ class Calendar {
 			}
 		}
 		await upcoming.clearRows();
-		// await upcoming.addRows(pending);
 		this.assignments = [];
 		let currDate: moment.Moment = moment.default();
 		for (let assignment of pending) {
