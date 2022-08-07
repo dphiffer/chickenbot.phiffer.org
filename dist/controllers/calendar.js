@@ -136,8 +136,8 @@ class Calendar {
         await sheets.loadTasks();
         await this.setupQueue();
         await this.markTaskDates();
-        await this.archiveAssignments();
-        await this.scheduleForWeek();
+        let curr = await this.archiveAssignments();
+        await this.scheduleForWeek(curr);
         await this.addUpcoming();
         await this.setAssigned();
     }
@@ -176,11 +176,10 @@ class Calendar {
             task.nextRun = nextRun.format(fmt);
         }
     }
-    async scheduleForWeek() {
-        let now = moment.default();
+    async scheduleForWeek(curr) {
         let assignments = [];
         for (let i = 0; i < 7; i++) {
-            let date = now.add(1, 'days');
+            let date = curr.add(1, 'days');
             await this.scheduleForDate(date);
         }
     }
@@ -256,11 +255,14 @@ class Calendar {
             }
         }
         await upcoming.clearRows();
-        await upcoming.addRows(pending);
+        // await upcoming.addRows(pending);
         this.assignments = [];
+        let currDate = moment.default();
         for (let assignment of pending) {
             this.addAssignment('Upcoming', assignment);
+            currDate = moment.default(assignment.date, 'M/D');
         }
+        return currDate;
     }
     async addUpcoming() {
         let sheets = await sheets_1.default.getInstance();
