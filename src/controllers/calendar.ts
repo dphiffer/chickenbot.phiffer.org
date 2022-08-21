@@ -125,14 +125,14 @@ class Calendar {
 		return null;
 	}
 
-	async scheduleTasks() {
+	async scheduleTasks(length: number) {
 		let sheets = await Sheets.getInstance();
 		await sheets.loadPeople();
 		await sheets.loadTasks();
 		await this.setupQueue();
 		await this.markTaskDates();
 		let curr = await this.archiveAssignments();
-		await this.scheduleForWeek(curr);
+		await this.scheduleForWeek(curr, length);
 		await this.addUpcoming();
 		await this.setAssigned();
 	}
@@ -174,9 +174,9 @@ class Calendar {
 		}
 	}
 
-	async scheduleForWeek(curr: moment.Moment) {
+	async scheduleForWeek(curr: moment.Moment, length: number) {
 		let assignments: Assignment[] = [];
-		for (let i = 0; i < 7; i++) {
+		for (let i = 0; i < length; i++) {
 			let date = curr.add(1, 'days');
 			await this.scheduleForDate(date);
 		}
@@ -255,6 +255,27 @@ class Calendar {
 		}
 	}
 
+	getScheduleDates(length: number) {
+		let startDate = moment.default();
+		let assignmentDate: moment.Moment;
+		for (let assignment of this.assignments) {
+			assignmentDate = moment.default(assignment.date, 'M/D');
+			if (
+				assignmentDate.format('YYYY-MM-DD') >
+				startDate.format('YYYY-MM-DD')
+			) {
+				startDate = assignmentDate;
+			}
+		}
+		console.log(startDate.format('YYYY-MM-DD'));
+		startDate.add(1, 'days');
+		let endDate = startDate.clone();
+		endDate.add(length - 1, 'days');
+		return `from ${startDate.format('ddd M/D')} to ${endDate.format(
+			'ddd M/D'
+		)}`;
+	}
+
 	async archiveAssignments() {
 		let sheets = await Sheets.getInstance();
 		let upcoming = sheets.doc.sheetsByTitle['Upcoming'];
@@ -269,16 +290,16 @@ class Calendar {
 				person: row.person,
 				status: row.status,
 			};
-			await archive.addRow(assignment);
 			if (
 				assignment.status == AssignmentStatus.PENDING ||
 				assignment.status == AssignmentStatus.SCHEDULED
 			) {
 				pending.push(assignment);
+			} else {
+				await archive.addRow(assignment);
 			}
 		}
 		await upcoming.clearRows();
-		// await upcoming.addRows(pending);
 		this.assignments = [];
 		let currDate: moment.Moment = moment.default();
 		for (let assignment of pending) {
