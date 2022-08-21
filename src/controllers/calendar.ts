@@ -125,14 +125,14 @@ class Calendar {
 		return null;
 	}
 
-	async scheduleTasks() {
+	async scheduleTasks(length: number) {
 		let sheets = await Sheets.getInstance();
 		await sheets.loadPeople();
 		await sheets.loadTasks();
 		await this.setupQueue();
 		await this.markTaskDates();
 		let curr = await this.archiveAssignments();
-		await this.scheduleForWeek(curr);
+		await this.scheduleForWeek(curr, length);
 		await this.addUpcoming();
 		await this.setAssigned();
 	}
@@ -174,9 +174,9 @@ class Calendar {
 		}
 	}
 
-	async scheduleForWeek(curr: moment.Moment) {
+	async scheduleForWeek(curr: moment.Moment, length: number) {
 		let assignments: Assignment[] = [];
-		for (let i = 0; i < 7; i++) {
+		for (let i = 0; i < length; i++) {
 			let date = curr.add(1, 'days');
 			await this.scheduleForDate(date);
 		}

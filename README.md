@@ -106,6 +106,11 @@ Scheduling tasks happens on a weekly basis.
 2. Each active person is prompted for when they are away (see diagram below).
 3. Once everyone has responded, tasks are scheduled for the week and each person receives a list of their tasks.
 
+### Schedule options
+
+* Quick schedule: send `schedule!` (with an exclamation mark) to skip asking about when people are away.
+* Schedule length: send `schedule [days]` (with the number of days) to adjust how many days to schedule (defaults to 7).
+
 ```mermaid
 graph TD;
     start(schedule command)-->away{Away this week?};

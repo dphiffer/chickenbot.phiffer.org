@@ -32,6 +32,7 @@ export default class Messages {
 	twilio: twilio.Twilio;
 	phone: string;
 	isScheduling: boolean = false;
+	scheduleLength: number = 7;
 
 	private constructor() {
 		this.twilio = twilio(
@@ -93,10 +94,8 @@ export default class Messages {
 		let backupRegex = await this.getBackupRegex();
 		let rsp = '';
 		app.log.info(`Current context: ${backup.context}`);
-		if (msg.Body.trim().toLowerCase() === 'schedule!') {
-			rsp = await this.scheduleQuick();
-		} else if (sms == 'schedule') {
-			await this.scheduleStart();
+		if (sms.startsWith('schedule')) {
+			await this.scheduleStart(sms);
 		} else if (sms == 'announce') {
 			await this.setAnnounceContext(backup);
 		} else if (sms == 'ready') {
@@ -157,12 +156,20 @@ export default class Messages {
 		return '';
 	}
 
-	async scheduleStart() {
+	async scheduleStart(sms: string) {
 		this.isScheduling = true;
+		this.scheduleLength = 7;
+		let lengthMatch = sms.match(/^schedule (\d+)/);
+		if (lengthMatch) {
+			this.scheduleLength = parseInt(lengthMatch[1]);
+		}
+		let quickSchedule = sms.endsWith('!');
 		let sheets = await Sheets.getInstance();
 		let people = sheets.getActivePeople();
 		for (let person of people) {
-			if (person.status != PersonStatus.VACATION) {
+			if (quickSchedule) {
+				person.context = PersonContext.READY;
+			} else if (person.status != PersonStatus.VACATION) {
 				person.context = PersonContext.SCHEDULE_START;
 				await this.sendMessage(
 					person,
@@ -170,17 +177,10 @@ export default class Messages {
 				);
 			}
 		}
-	}
-
-	async scheduleQuick() {
-		this.isScheduling = true;
-		let sheets = await Sheets.getInstance();
-		let people = sheets.getActivePeople();
-		for (let person of people) {
-			person.context = PersonContext.READY;
+		if (quickSchedule) {
+			this.scheduleIfAllAreReady();
+			return 'Creating a quick schedule.';
 		}
-		this.scheduleIfAllAreReady();
-		return 'Creating a quick schedule.';
 	}
 
 	async handleScheduleStartReply(msg: IncomingMessage, person: Person) {
@@ -301,7 +301,7 @@ export default class Messages {
 		}
 		if (allAreReady) {
 			let calendar = await Calendar.getInstance();
-			calendar.scheduleTasks().then(async () => {
+			calendar.scheduleTasks(this.scheduleLength).then(async () => {
 				let backup = await sheets.currentBackup();
 				if (backup) {
 					backup.context = PersonContext.SCHEDULE_SEND;

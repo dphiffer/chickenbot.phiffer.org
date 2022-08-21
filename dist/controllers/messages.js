@@ -40,6 +40,7 @@ const app_1 = __importDefault(require("../app"));
 class Messages {
     constructor() {
         this.isScheduling = false;
+        this.scheduleLength = 7;
         this.twilio = (0, twilio_2.default)(Messages.config.accountSid, Messages.config.authToken);
         this.phone = Messages.config.phone;
     }
@@ -97,11 +98,8 @@ class Messages {
         let backupRegex = await this.getBackupRegex();
         let rsp = '';
         app_1.default.log.info(`Current context: ${backup.context}`);
-        if (msg.Body.trim().toLowerCase() === 'schedule!') {
-            rsp = await this.scheduleQuick();
-        }
-        else if (sms == 'schedule') {
-            await this.scheduleStart();
+        if (sms.startsWith('schedule')) {
+            await this.scheduleStart(sms);
         }
         else if (sms == 'announce') {
             await this.setAnnounceContext(backup);
@@ -165,26 +163,29 @@ class Messages {
         }
         return '';
     }
-    async scheduleStart() {
+    async scheduleStart(sms) {
         this.isScheduling = true;
+        this.scheduleLength = 7;
+        let lengthMatch = sms.match(/^schedule (\d+)/);
+        if (lengthMatch) {
+            this.scheduleLength = parseInt(lengthMatch[1]);
+        }
+        let quickSchedule = sms.endsWith('!');
         let sheets = await sheets_1.default.getInstance();
         let people = sheets.getActivePeople();
         for (let person of people) {
-            if (person.status != person_1.PersonStatus.VACATION) {
+            if (quickSchedule) {
+                person.context = person_1.PersonContext.READY;
+            }
+            else if (person.status != person_1.PersonStatus.VACATION) {
                 person.context = person_1.PersonContext.SCHEDULE_START;
                 await this.sendMessage(person, `Hi ${person.name}, it is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]`);
             }
         }
-    }
-    async scheduleQuick() {
-        this.isScheduling = true;
-        let sheets = await sheets_1.default.getInstance();
-        let people = sheets.getActivePeople();
-        for (let person of people) {
-            person.context = person_1.PersonContext.READY;
+        if (quickSchedule) {
+            this.scheduleIfAllAreReady();
+            return 'Creating a quick schedule.';
         }
-        this.scheduleIfAllAreReady();
-        return 'Creating a quick schedule.';
     }
     async handleScheduleStartReply(msg, person) {
         let sms = this.normalizeBody(msg);
@@ -304,7 +305,7 @@ class Messages {
         }
         if (allAreReady) {
             let calendar = await calendar_1.default.getInstance();
-            calendar.scheduleTasks().then(async () => {
+            calendar.scheduleTasks(this.scheduleLength).then(async () => {
                 let backup = await sheets.currentBackup();
                 if (backup) {
                     backup.context = person_1.PersonContext.SCHEDULE_SEND;
