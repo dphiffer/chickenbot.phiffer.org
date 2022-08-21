@@ -234,6 +234,22 @@ class Calendar {
             return time;
         }
     }
+    getScheduleDates(length) {
+        let startDate = moment.default();
+        let assignmentDate;
+        for (let assignment of this.assignments) {
+            assignmentDate = moment.default(assignment.date, 'M/D');
+            if (assignmentDate.format('YYYY-MM-DD') >
+                startDate.format('YYYY-MM-DD')) {
+                startDate = assignmentDate;
+            }
+        }
+        console.log(startDate.format('YYYY-MM-DD'));
+        startDate.add(1, 'days');
+        let endDate = startDate.clone();
+        endDate.add(length - 1, 'days');
+        return `from ${startDate.format('ddd M/D')} to ${endDate.format('ddd M/D')}`;
+    }
     async archiveAssignments() {
         let sheets = await sheets_1.default.getInstance();
         let upcoming = sheets.doc.sheetsByTitle['Upcoming'];
@@ -248,14 +264,15 @@ class Calendar {
                 person: row.person,
                 status: row.status,
             };
-            await archive.addRow(assignment);
             if (assignment.status == assignment_1.AssignmentStatus.PENDING ||
                 assignment.status == assignment_1.AssignmentStatus.SCHEDULED) {
                 pending.push(assignment);
             }
+            else {
+                await archive.addRow(assignment);
+            }
         }
         await upcoming.clearRows();
-        // await upcoming.addRows(pending);
         this.assignments = [];
         let currDate = moment.default();
         for (let assignment of pending) {

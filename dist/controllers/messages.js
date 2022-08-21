@@ -173,13 +173,15 @@ class Messages {
         let quickSchedule = sms.endsWith('!');
         let sheets = await sheets_1.default.getInstance();
         let people = sheets.getActivePeople();
+        let calendar = await calendar_1.default.getInstance();
+        let weekDates = calendar.getScheduleDates(this.scheduleLength);
         for (let person of people) {
             if (quickSchedule) {
                 person.context = person_1.PersonContext.READY;
             }
             else if (person.status != person_1.PersonStatus.VACATION) {
                 person.context = person_1.PersonContext.SCHEDULE_START;
-                await this.sendMessage(person, `Hi ${person.name}, it is time to schedule chicken tasks. Are there any days you will be away this week? [reply Y or N]`);
+                await this.sendMessage(person, `Hi ${person.name}, it is time to schedule chicken tasks. Are there any days you will be away ${weekDates}? [reply Y or N]`);
             }
         }
         if (quickSchedule) {
