@@ -109,7 +109,8 @@ Scheduling tasks happens on a weekly basis.
 ### Schedule options
 
 * Quick schedule: send `schedule!` (with an exclamation mark) to skip asking about when people are away.
-* Schedule length: send `schedule [days]` (with the number of days) to adjust how many days to schedule (defaults to 7).
+* Schedule length: send `schedule [number of days]` to adjust how many days to schedule (defaults to 7).
+* You can combine a quick schedule with the length option: `schedule 5!`
 
 ```mermaid
 graph TD;
