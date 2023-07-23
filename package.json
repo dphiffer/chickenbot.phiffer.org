@@ -1,6 +1,6 @@
 {
 	"name": "chickenbot",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Group task scheduling and reminders using Google Sheets and Twilio",
 	"main": "dist/server.js",
 	"dependencies": {
@@ -16,13 +16,13 @@
 		"moment-timezone": "^0.5.34",
 		"pino-pretty": "^8.0.0",
 		"suntimes": "^6.0.2",
-		"twilio": "^3.77.3"
+		"twilio": "^4.14.0"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.3.1",
 		"@types/google-spreadsheet": "^3.3.0",
 		"@types/node": "^18.0.1",
-		"nodemon": "^2.0.19",
+		"nodemon": "^3.0.1",
 		"ts-loader": "^9.3.1",
 		"typescript": "^4.7.4",
 		"webpack": "^5.73.0",
