@@ -46,6 +46,15 @@ async function routes(app) {
         }
         return rsp;
     });
+    app.post('/message/status', async (request, reply) => {
+        let error = request.body.errorMessage
+            ? `(${request.body.errorMessage})`
+            : '';
+        await messages_1.default.updatePendingMessage(request.body.MessageSid, request.body.MessageStatus);
+        reply.send({
+            ok: true,
+        });
+    });
     app.post('/call/:phone', async (request, reply) => {
         let voice = voice_1.default.getInstance();
         reply.header('Content-Type', 'text/xml');

@@ -80,6 +80,25 @@ async function routes(app: FastifyInstance) {
 	);
 
 	app.post(
+		'/message/status',
+		async (
+			request: FastifyRequest<{ Body: IncomingMessage }>,
+			reply: FastifyReply
+		) => {
+			let error = request.body.errorMessage
+				? `(${request.body.errorMessage})`
+				: '';
+			await Messages.updatePendingMessage(
+				request.body.MessageSid,
+				request.body.MessageStatus
+			);
+			reply.send({
+				ok: true,
+			});
+		}
+	);
+
+	app.post(
 		'/call/:phone',
 		async (
 			request: FastifyRequest<{ Params: { phone: string } }>,

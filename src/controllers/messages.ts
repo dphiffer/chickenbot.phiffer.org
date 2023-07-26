@@ -15,8 +15,18 @@ import Person from '../models/person';
 import Assignment from '../models/assignment';
 import app from '../app';
 
+interface PendingMessage {
+	sid: string;
+	person: Person;
+	body: string;
+	media: string[];
+	created: Date;
+	status: string;
+}
+
 export default class Messages {
 	private static config: TwilioConfig;
+	static pendingMessages: PendingMessage[] = [];
 	static instance: Messages;
 	static yesReplies = [
 		'y',
@@ -52,6 +62,46 @@ export default class Messages {
 		}
 		this.instance = new Messages();
 		return this.instance;
+	}
+
+	static getPendingSummary() {
+		if (Messages.pendingMessages.length == 0) {
+			return '';
+		} else {
+			return ` (${Messages.pendingMessages.length} pending messages)`;
+		}
+	}
+
+	static async updatePendingMessage(sid: string, status: string) {
+		if (status == 'delivered') {
+			app.log.info(`Delivered SMS ${sid}`);
+			Messages.pendingMessages = Messages.pendingMessages.filter(
+				msg => msg.sid != sid
+			);
+		} else if (status == 'undelivered') {
+			app.log.info(`Resending undelivered SMS ${sid}...`);
+			for (let msg of Messages.pendingMessages) {
+				if (msg.sid == sid) {
+					await Messages.getInstance().sendMessage(
+						msg.person,
+						msg.body,
+						msg.media
+					);
+					Messages.pendingMessages = Messages.pendingMessages.filter(
+						msg => msg.sid != sid
+					);
+					break;
+				}
+			}
+		} else {
+			for (let i = 0; i < Messages.pendingMessages.length; i++) {
+				let msg = Messages.pendingMessages[i];
+				if (msg.sid == sid) {
+					Messages.pendingMessages[i].status = status;
+					break;
+				}
+			}
+		}
 	}
 
 	displayPhone(phone: string) {
@@ -568,12 +618,21 @@ export default class Messages {
 	}
 
 	async sendMessage(person: Person, body: string, media: string[] = []) {
-		app.log.info(`SMS to ${person.name}: ${body}`);
-		await this.twilio.messages.create({
+		let message = await this.twilio.messages.create({
 			from: this.phone,
 			to: person.phone,
 			body: body,
 			mediaUrl: media,
+			statusCallback: `${Messages.config.serverUrl}/message/status`,
+		});
+		app.log.info(`SMS to ${person.name}: ${body} (SID ${message.sid})`);
+		Messages.pendingMessages.push({
+			sid: message.sid,
+			person: person,
+			body: body,
+			media: media,
+			created: new Date(),
+			status: 'pending',
 		});
 	}
 

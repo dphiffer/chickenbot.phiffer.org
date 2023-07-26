@@ -54,6 +54,39 @@ class Messages {
         this.instance = new Messages();
         return this.instance;
     }
+    static getPendingSummary() {
+        if (Messages.pendingMessages.length == 0) {
+            return '';
+        }
+        else {
+            return ` (${Messages.pendingMessages.length} pending messages)`;
+        }
+    }
+    static async updatePendingMessage(sid, status) {
+        if (status == 'delivered') {
+            app_1.default.log.info(`Delivered SMS ${sid}`);
+            Messages.pendingMessages = Messages.pendingMessages.filter(msg => msg.sid != sid);
+        }
+        else if (status == 'undelivered') {
+            app_1.default.log.info(`Resending undelivered SMS ${sid}...`);
+            for (let msg of Messages.pendingMessages) {
+                if (msg.sid == sid) {
+                    await Messages.getInstance().sendMessage(msg.person, msg.body, msg.media);
+                    Messages.pendingMessages = Messages.pendingMessages.filter(msg => msg.sid != sid);
+                    break;
+                }
+            }
+        }
+        else {
+            for (let i = 0; i < Messages.pendingMessages.length; i++) {
+                let msg = Messages.pendingMessages[i];
+                if (msg.sid == sid) {
+                    Messages.pendingMessages[i].status = status;
+                    break;
+                }
+            }
+        }
+    }
     displayPhone(phone) {
         let area = phone.substring(2, 5);
         let prefix = phone.substring(5, 8);
@@ -538,12 +571,21 @@ class Messages {
         return person;
     }
     async sendMessage(person, body, media = []) {
-        app_1.default.log.info(`SMS to ${person.name}: ${body}`);
-        await this.twilio.messages.create({
+        let message = await this.twilio.messages.create({
             from: this.phone,
             to: person.phone,
             body: body,
             mediaUrl: media,
+            statusCallback: `${Messages.config.serverUrl}/message/status`,
+        });
+        app_1.default.log.info(`SMS to ${person.name}: ${body} (SID ${message.sid})`);
+        Messages.pendingMessages.push({
+            sid: message.sid,
+            person: person,
+            body: body,
+            media: media,
+            created: new Date(),
+            status: 'pending',
         });
     }
     messageResponse(reply, response) {
@@ -567,6 +609,7 @@ class Messages {
     }
 }
 exports.default = Messages;
+Messages.pendingMessages = [];
 Messages.yesReplies = [
     'y',
     'yes',
