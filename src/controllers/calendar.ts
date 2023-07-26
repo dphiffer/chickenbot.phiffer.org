@@ -336,7 +336,7 @@ class Calendar {
 	}
 
 	async checkAssignments() {
-		app.log.info('Checking assignments');
+		app.log.info('Checking assignments' + Messages.getPendingSummary());
 		let sheets = await Sheets.getInstance();
 		let assignmentsDue = [];
 		let today = moment.default().format('YYYY-MM-DD');
