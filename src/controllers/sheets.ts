@@ -46,14 +46,14 @@ class Sheets {
 		let creds = JSON.parse(credsJson);
 		await this.doc.useServiceAccountAuth(creds);
 		await this.doc.loadInfo();
-		app.log.info(`Loading '${this.doc.title}'`);
+		app.log.warn(`Loading '${this.doc.title}'`);
 		let people = await this.loadPeople();
 		let active = this.getActivePeople();
-		app.log.info(
+		app.log.warn(
 			`Loaded ${people.length} people (${active.length} are active)`
 		);
 		let tasks = await this.loadTasks();
-		app.log.info(`Loaded ${tasks.length} tasks`);
+		app.log.warn(`Loaded ${tasks.length} tasks`);
 		return this;
 	}
 
@@ -78,7 +78,7 @@ class Sheets {
 	}
 
 	async updateFromWebhook(data: WebhookUpdate) {
-		app.log.info(data);
+		app.log.warn(data);
 		this.validateSecret(data);
 		let updated;
 		if (data.assignment) {
@@ -102,7 +102,7 @@ class Sheets {
 		assignment.time = data.time;
 		assignment.person = data.person;
 		assignment.status = data.status;
-		app.log.info(
+		app.log.warn(
 			`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`
 		);
 		let messages = Messages.getInstance();
@@ -113,7 +113,7 @@ class Sheets {
 					a => a.person == data.person
 				);
 				person.setSchedule(assigned);
-				app.log.info(`Updated schedule for ${data.person}`);
+				app.log.warn(`Updated schedule for ${data.person}`);
 			}
 			[person] = this.people.filter(p => p.name == previousPerson);
 			if (person) {
@@ -121,7 +121,7 @@ class Sheets {
 					a => a.person == previousPerson
 				);
 				person.setSchedule(assigned);
-				app.log.info(`Updated schedule for ${previousPerson}`);
+				app.log.warn(`Updated schedule for ${previousPerson}`);
 			}
 		}
 		return assignment;
@@ -135,7 +135,7 @@ class Sheets {
 		person.phone = person.normalizePhone(data.phone);
 		person.status = data.status;
 		person.away = data.away;
-		app.log.info(`Updated '${person.name}'`);
+		app.log.warn(`Updated '${person.name}'`);
 		return person;
 	}
 

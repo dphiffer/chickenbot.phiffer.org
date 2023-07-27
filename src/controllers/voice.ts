@@ -44,7 +44,7 @@ class Voice {
 		if (!person.assignment) {
 			throw new Error(`Could not find assignment for ${person.name}`);
 		}
-		app.log.info(`Calling ${person.name}...`);
+		app.log.warn(`Calling ${person.name}...`);
 		let assignment = person.assignment;
 		let sheets = await Sheets.getInstance();
 		let [task] = sheets.tasks.filter(t => t.name == assignment.task);
@@ -70,7 +70,7 @@ class Voice {
 			throw new Error(`Could not find call for ${phone}`);
 		}
 		let message = `Hello ${call.person.name}, ${call.task.question} Please press 1 if you are done with the task. Press 2 to snooze the task if you need more time.`;
-		app.log.info(`Saying: ${message}`);
+		app.log.warn(`Saying: ${message}`);
 		let rsp = this.say(message);
 		rsp.gather({
 			action: `${this.url}/call/${phone}/response`,
@@ -90,7 +90,7 @@ class Voice {
 		}
 		if (digits == '1') {
 			let affirmation = Person.getAffirmation(true);
-			app.log.info(`Task is done. Saying: ${affirmation}`);
+			app.log.warn(`Task is done. Saying: ${affirmation}`);
 			await call.assignment.setDone();
 			rsp = this.say(affirmation);
 			rsp.say('Goodbye!');
@@ -99,13 +99,13 @@ class Voice {
 			let time = await call.assignment.snooze();
 			let message = `Great, I'll ask again at ${time}.`;
 			rsp = this.say(message);
-			app.log.info(`Snoozing task. Saying: ${message}`);
+			app.log.warn(`Snoozing task. Saying: ${message}`);
 			rsp.say('Goodbye!');
 			rsp.hangup();
 		} else {
 			let message =
 				'Please press 1 if you are done with the task. Press 2 to snooze the task if you need more time.';
-			app.log.info(`Invalid input: ${digits}. Saying: ${message}`);
+			app.log.warn(`Invalid input: ${digits}. Saying: ${message}`);
 			rsp = this.say(message);
 			rsp.gather({
 				action: `${this.url}/call/${phone}/response`,

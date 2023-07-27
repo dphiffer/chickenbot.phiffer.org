@@ -64,11 +64,11 @@ class Messages {
     }
     static async updatePendingMessage(sid, status) {
         if (status == 'delivered') {
-            app_1.default.log.info(`Delivered SMS ${sid}`);
+            app_1.default.log.warn(`Delivered SMS ${sid}`);
             Messages.pendingMessages = Messages.pendingMessages.filter(msg => msg.sid != sid);
         }
         else if (status == 'undelivered') {
-            app_1.default.log.info(`Resending undelivered SMS ${sid}...`);
+            app_1.default.log.warn(`Resending undelivered SMS ${sid}...`);
             for (let msg of Messages.pendingMessages) {
                 if (msg.sid == sid) {
                     await Messages.getInstance().sendMessage(msg.person, msg.body, msg.media);
@@ -130,7 +130,7 @@ class Messages {
         let announceRegex = this.getAnnounceRegex();
         let backupRegex = await this.getBackupRegex();
         let rsp = '';
-        app_1.default.log.info(`Current context: ${backup.context}`);
+        app_1.default.log.warn(`Current context: ${backup.context}`);
         if (sms.startsWith('schedule')) {
             await this.scheduleStart(sms);
         }
@@ -578,7 +578,7 @@ class Messages {
             mediaUrl: media,
             statusCallback: `${Messages.config.serverUrl}/message/status`,
         });
-        app_1.default.log.info(`SMS to ${person.name}: ${body} (SID ${message.sid})`);
+        app_1.default.log.warn(`SMS to ${person.name}: ${body} (SID ${message.sid})`);
         Messages.pendingMessages.push({
             sid: message.sid,
             person: person,

@@ -153,7 +153,7 @@ class Person {
         return false;
     }
     async setTemporaryContext(context, onExpire, chatContext = null) {
-        app_1.default.log.info(`Setting ${this.name}'s temporary context to '${context}'`);
+        app_1.default.log.warn(`Setting ${this.name}'s temporary context to '${context}'`);
         this.context = context;
         if (chatContext) {
             this.chatContext = chatContext;
@@ -163,7 +163,7 @@ class Person {
         }
         this.contextTimeout = setTimeout(() => {
             onExpire();
-            app_1.default.log.info(`Resetting ${this.name}'s context to '${PersonContext.READY}'`);
+            app_1.default.log.warn(`Resetting ${this.name}'s context to '${PersonContext.READY}'`);
             if (this.context == context) {
                 this.context = PersonContext.READY;
             }

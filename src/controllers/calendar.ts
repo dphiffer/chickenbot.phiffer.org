@@ -80,11 +80,11 @@ class Calendar {
 
 	async setup() {
 		let upcoming = await this.loadAssignments('Upcoming');
-		app.log.info(`Loaded ${upcoming.length} upcoming assignments`);
+		app.log.warn(`Loaded ${upcoming.length} upcoming assignments`);
 		let archived = await this.loadAssignments('Archive');
-		app.log.info(`Loaded ${archived.length} archived assignments`);
+		app.log.warn(`Loaded ${archived.length} archived assignments`);
 		this.markTaskDates();
-		app.log.info('Setting up assignment check interval');
+		app.log.warn('Setting up assignment check interval');
 		setInterval(async () => {
 			await this.checkAssignments();
 		}, 60 * 1000);
@@ -336,7 +336,7 @@ class Calendar {
 	}
 
 	async checkAssignments() {
-		app.log.info('Checking assignments' + Messages.getPendingSummary());
+		app.log.warn('Checking assignments' + Messages.getPendingSummary());
 		let sheets = await Sheets.getInstance();
 		let assignmentsDue = [];
 		let today = moment.default().format('YYYY-MM-DD');
@@ -354,7 +354,7 @@ class Calendar {
 				dateTime.format('HH:mm:ss') <= now
 			) {
 				assignmentsDue.push(assignment);
-				app.log.info(`due: ${assignment.task.toLowerCase()}`);
+				app.log.warn(`due: ${assignment.task.toLowerCase()}`);
 			}
 		}
 		if (assignmentsDue.length > 0) {
