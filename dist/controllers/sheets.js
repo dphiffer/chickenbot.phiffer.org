@@ -36,12 +36,12 @@ class Sheets {
         let creds = JSON.parse(credsJson);
         await this.doc.useServiceAccountAuth(creds);
         await this.doc.loadInfo();
-        app_1.default.log.info(`Loading '${this.doc.title}'`);
+        app_1.default.log.warn(`Loading '${this.doc.title}'`);
         let people = await this.loadPeople();
         let active = this.getActivePeople();
-        app_1.default.log.info(`Loaded ${people.length} people (${active.length} are active)`);
+        app_1.default.log.warn(`Loaded ${people.length} people (${active.length} are active)`);
         let tasks = await this.loadTasks();
-        app_1.default.log.info(`Loaded ${tasks.length} tasks`);
+        app_1.default.log.warn(`Loaded ${tasks.length} tasks`);
         return this;
     }
     async loadPeople() {
@@ -63,7 +63,7 @@ class Sheets {
         return this.tasks;
     }
     async updateFromWebhook(data) {
-        app_1.default.log.info(data);
+        app_1.default.log.warn(data);
         this.validateSecret(data);
         let updated;
         if (data.assignment) {
@@ -87,20 +87,20 @@ class Sheets {
         assignment.time = data.time;
         assignment.person = data.person;
         assignment.status = data.status;
-        app_1.default.log.info(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
+        app_1.default.log.warn(`Updated '${assignment.task.toLowerCase()}' on ${assignment.date}`);
         let messages = messages_1.default.getInstance();
         if (messages.isScheduling && previousPerson) {
             let [person] = this.people.filter(p => p.name == data.person);
             if (person) {
                 let assigned = calendar.assignments.filter(a => a.person == data.person);
                 person.setSchedule(assigned);
-                app_1.default.log.info(`Updated schedule for ${data.person}`);
+                app_1.default.log.warn(`Updated schedule for ${data.person}`);
             }
             [person] = this.people.filter(p => p.name == previousPerson);
             if (person) {
                 let assigned = calendar.assignments.filter(a => a.person == previousPerson);
                 person.setSchedule(assigned);
-                app_1.default.log.info(`Updated schedule for ${previousPerson}`);
+                app_1.default.log.warn(`Updated schedule for ${previousPerson}`);
             }
         }
         return assignment;
@@ -113,7 +113,7 @@ class Sheets {
         person.phone = person.normalizePhone(data.phone);
         person.status = data.status;
         person.away = data.away;
-        app_1.default.log.info(`Updated '${person.name}'`);
+        app_1.default.log.warn(`Updated '${person.name}'`);
         return person;
     }
     validateSecret(data) {

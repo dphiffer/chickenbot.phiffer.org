@@ -23,7 +23,7 @@ export interface IncomingMessage {
 }
 
 async function routes(app: FastifyInstance) {
-	app.get('/', async (_, reply: FastifyReply) => {
+	app.all('/', async (_, reply: FastifyReply) => {
 		let calendar = await Calendar.getInstance();
 		let sheets = await Sheets.getInstance();
 		let messages = Messages.getInstance();
@@ -49,7 +49,7 @@ async function routes(app: FastifyInstance) {
 			try {
 				messages = Messages.getInstance();
 				person = await messages.validateMessage(request.body);
-				app.log.info(
+				app.log.warn(
 					`Message from ${person.name}: ${request.body.Body}`
 				);
 				let response = await messages.handleMessage(
@@ -57,7 +57,7 @@ async function routes(app: FastifyInstance) {
 					request.body
 				);
 				if (response) {
-					app.log.info(`Message to ${person.name}: ${response}`);
+					app.log.warn(`Message to ${person.name}: ${response}`);
 					rsp = messages.messageResponse(reply, response);
 				}
 			} catch (err) {

@@ -181,7 +181,7 @@ export default class Person {
 		onExpire: Function,
 		chatContext: null | Person = null
 	) {
-		app.log.info(
+		app.log.warn(
 			`Setting ${this.name}'s temporary context to '${context}'`
 		);
 		this.context = context;
@@ -193,7 +193,7 @@ export default class Person {
 		}
 		this.contextTimeout = setTimeout(() => {
 			onExpire();
-			app.log.info(
+			app.log.warn(
 				`Resetting ${this.name}'s context to '${PersonContext.READY}'`
 			);
 			if (this.context == context) {

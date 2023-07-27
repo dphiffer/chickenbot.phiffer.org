@@ -9,7 +9,7 @@ const voice_1 = __importDefault(require("./controllers/voice"));
 const sheets_1 = __importDefault(require("./controllers/sheets"));
 const calendar_1 = __importDefault(require("./controllers/calendar"));
 async function routes(app) {
-    app.get('/', async (_, reply) => {
+    app.all('/', async (_, reply) => {
         let calendar = await calendar_1.default.getInstance();
         let sheets = await sheets_1.default.getInstance();
         let messages = messages_1.default.getInstance();
@@ -29,10 +29,10 @@ async function routes(app) {
         try {
             messages = messages_1.default.getInstance();
             person = await messages.validateMessage(request.body);
-            app.log.info(`Message from ${person.name}: ${request.body.Body}`);
+            app.log.warn(`Message from ${person.name}: ${request.body.Body}`);
             let response = await messages.handleMessage(person, request.body);
             if (response) {
-                app.log.info(`Message to ${person.name}: ${response}`);
+                app.log.warn(`Message to ${person.name}: ${response}`);
                 rsp = messages.messageResponse(reply, response);
             }
         }

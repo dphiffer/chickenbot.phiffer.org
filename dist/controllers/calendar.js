@@ -89,11 +89,11 @@ class Calendar {
     }
     async setup() {
         let upcoming = await this.loadAssignments('Upcoming');
-        app_1.default.log.info(`Loaded ${upcoming.length} upcoming assignments`);
+        app_1.default.log.warn(`Loaded ${upcoming.length} upcoming assignments`);
         let archived = await this.loadAssignments('Archive');
-        app_1.default.log.info(`Loaded ${archived.length} archived assignments`);
+        app_1.default.log.warn(`Loaded ${archived.length} archived assignments`);
         this.markTaskDates();
-        app_1.default.log.info('Setting up assignment check interval');
+        app_1.default.log.warn('Setting up assignment check interval');
         setInterval(async () => {
             await this.checkAssignments();
         }, 60 * 1000);
@@ -304,7 +304,7 @@ class Calendar {
         return people;
     }
     async checkAssignments() {
-        app_1.default.log.info('Checking assignments' + messages_1.default.getPendingSummary());
+        app_1.default.log.warn('Checking assignments' + messages_1.default.getPendingSummary());
         let sheets = await sheets_1.default.getInstance();
         let assignmentsDue = [];
         let today = moment.default().format('YYYY-MM-DD');
@@ -317,7 +317,7 @@ class Calendar {
             if (dateTime.format('YYYY-MM-DD') == today &&
                 dateTime.format('HH:mm:ss') <= now) {
                 assignmentsDue.push(assignment);
-                app_1.default.log.info(`due: ${assignment.task.toLowerCase()}`);
+                app_1.default.log.warn(`due: ${assignment.task.toLowerCase()}`);
             }
         }
         if (assignmentsDue.length > 0) {
