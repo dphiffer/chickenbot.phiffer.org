@@ -27,11 +27,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const person_1 = require("../models/person");
-const twilio_1 = require("twilio");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const axios_1 = __importDefault(require("axios"));
-const twilio_2 = __importDefault(require("twilio"));
+const twilio_1 = __importDefault(require("twilio"));
 const moment = __importStar(require("moment-timezone"));
 const sheets_1 = __importDefault(require("./sheets"));
 const calendar_1 = __importDefault(require("./calendar"));
@@ -41,7 +40,7 @@ class Messages {
     constructor() {
         this.isScheduling = false;
         this.scheduleLength = 7;
-        this.twilio = (0, twilio_2.default)(Messages.config.accountSid, Messages.config.authToken);
+        this.twilio = (0, twilio_1.default)(Messages.config.accountSid, Messages.config.authToken);
         this.phone = Messages.config.phone;
     }
     static configure(config) {
@@ -587,12 +586,6 @@ class Messages {
             created: new Date(),
             status: 'pending',
         });
-    }
-    messageResponse(reply, response) {
-        let rsp = new twilio_1.twiml.MessagingResponse();
-        rsp.message(response);
-        reply.header('Content-Type', 'text/xml');
-        return rsp.toString();
     }
     async getNamesRegex() {
         let sheets = await sheets_1.default.getInstance();

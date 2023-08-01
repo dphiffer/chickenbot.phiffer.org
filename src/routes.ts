@@ -57,8 +57,7 @@ async function routes(app: FastifyInstance) {
 					request.body
 				);
 				if (response) {
-					app.log.warn(`Message to ${person.name}: ${response}`);
-					rsp = messages.messageResponse(reply, response);
+					messages.sendMessage(person, response);
 				}
 			} catch (err) {
 				app.log.error(err);
@@ -68,14 +67,14 @@ async function routes(app: FastifyInstance) {
 						person,
 						err as Error
 					);
-					rsp = messages.messageResponse(
-						reply,
+					messages.sendMessage(
+						person,
 						'Oops, sorry something went wrong.'
 					);
 					reply.status(500);
 				}
 			}
-			return rsp;
+			return reply.status(200);
 		}
 	);
 
