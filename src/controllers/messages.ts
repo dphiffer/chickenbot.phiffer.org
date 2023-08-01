@@ -636,13 +636,6 @@ export default class Messages {
 		});
 	}
 
-	messageResponse(reply: FastifyReply, response: string) {
-		let rsp = new twiml.MessagingResponse();
-		rsp.message(response);
-		reply.header('Content-Type', 'text/xml');
-		return rsp.toString();
-	}
-
 	async getNamesRegex() {
 		let sheets = await Sheets.getInstance();
 		let names = sheets.getActivePeople().map(p => p.name);

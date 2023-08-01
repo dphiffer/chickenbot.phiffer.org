@@ -304,7 +304,7 @@ class Calendar {
         return people;
     }
     async checkAssignments() {
-        app_1.default.log.warn('Checking assignments' + messages_1.default.getPendingSummary());
+        app_1.default.log.info('Checking assignments' + messages_1.default.getPendingSummary());
         let sheets = await sheets_1.default.getInstance();
         let assignmentsDue = [];
         let today = moment.default().format('YYYY-MM-DD');

@@ -32,19 +32,18 @@ async function routes(app) {
             app.log.warn(`Message from ${person.name}: ${request.body.Body}`);
             let response = await messages.handleMessage(person, request.body);
             if (response) {
-                app.log.warn(`Message to ${person.name}: ${response}`);
-                rsp = messages.messageResponse(reply, response);
+                messages.sendMessage(person, response);
             }
         }
         catch (err) {
             app.log.error(err);
             if (person && messages) {
                 messages.relayErrorToBackup(request.body, person, err);
-                rsp = messages.messageResponse(reply, 'Oops, sorry something went wrong.');
+                messages.sendMessage(person, 'Oops, sorry something went wrong.');
                 reply.status(500);
             }
         }
-        return rsp;
+        return reply.status(200);
     });
     app.post('/message/status', async (request, reply) => {
         let error = request.body.errorMessage
