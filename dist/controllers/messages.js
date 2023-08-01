@@ -601,7 +601,6 @@ class Messages {
         return new RegExp(`^backup:\\s*(${names.join('|')})\\s*$`, 'msi');
     }
 }
-exports.default = Messages;
 Messages.pendingMessages = [];
 Messages.yesReplies = [
     'y',
@@ -613,4 +612,5 @@ Messages.yesReplies = [
     'affirmative',
 ];
 Messages.noReplies = ['n', 'no', 'nope', 'nay', 'negative'];
+exports.default = Messages;
 //# sourceMappingURL=messages.js.map
