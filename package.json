@@ -1,32 +1,32 @@
 {
 	"name": "chickenbot",
-	"version": "0.0.9",
+	"version": "0.1.0",
 	"description": "Group task scheduling and reminders using Google Sheets and Twilio",
 	"main": "dist/server.js",
 	"dependencies": {
 		"@fastify/formbody": "^7.4.0",
 		"@fastify/static": "^6.10.2",
 		"@fastify/view": "^8.0.0",
-		"axios": "^0.27.2",
-		"chai": "^4.3.6",
-		"ejs": "^3.1.8",
-		"fastify": "^4.20.0",
+		"axios": "^1.4.0",
+		"chai": "^4.3.7",
+		"ejs": "^3.1.9",
+		"fastify": "^4.21.0",
 		"google-spreadsheet": "^3.3.0",
 		"moment": "^2.29.4",
 		"moment-timezone": "^0.5.34",
-		"pino-pretty": "^8.0.0",
-		"suntimes": "^6.0.2",
-		"twilio": "^4.14.0"
+		"pino-pretty": "^10.2.0",
+		"suntimes": "^6.0.3",
+		"twilio": "^4.14.1"
 	},
 	"devDependencies": {
-		"@types/chai": "^4.3.1",
+		"@types/chai": "^4.3.5",
 		"@types/google-spreadsheet": "^3.3.0",
-		"@types/node": "^18.0.1",
+		"@types/node": "^20.4.5",
 		"nodemon": "^3.0.1",
-		"ts-loader": "^9.3.1",
-		"typescript": "^4.7.4",
-		"webpack": "^5.73.0",
-		"webpack-cli": "^4.10.0"
+		"ts-loader": "^9.4.4",
+		"typescript": "^5.1.6",
+		"webpack": "^5.88.2",
+		"webpack-cli": "^5.1.4"
 	},
 	"scripts": {
 		"start": "node dist/server.js",

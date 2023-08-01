@@ -35,7 +35,7 @@ var AssignmentStatus;
     AssignmentStatus["SCHEDULED"] = "scheduled";
     AssignmentStatus["PENDING"] = "pending";
     AssignmentStatus["DONE"] = "done";
-})(AssignmentStatus = exports.AssignmentStatus || (exports.AssignmentStatus = {}));
+})(AssignmentStatus || (exports.AssignmentStatus = AssignmentStatus = {}));
 class Assignment {
     constructor(sheet, data) {
         this.timeout = null;
