@@ -20,14 +20,14 @@ var PersonContext;
     PersonContext["SCHEDULE_AWAY_TIME"] = "schedule-away-time";
     PersonContext["SCHEDULE_AWAY_CONFIRM"] = "schedule-away-confirm";
     PersonContext["SCHEDULE_SEND"] = "schedule-send";
-})(PersonContext = exports.PersonContext || (exports.PersonContext = {}));
+})(PersonContext || (exports.PersonContext = PersonContext = {}));
 var PersonStatus;
 (function (PersonStatus) {
     PersonStatus["ACTIVE"] = "active";
     PersonStatus["BACKUP"] = "backup";
     PersonStatus["INACTIVE"] = "inactive";
     PersonStatus["VACATION"] = "vacation";
-})(PersonStatus = exports.PersonStatus || (exports.PersonStatus = {}));
+})(PersonStatus || (exports.PersonStatus = PersonStatus = {}));
 class Person {
     constructor(sheets, row) {
         this.schedule = null;
