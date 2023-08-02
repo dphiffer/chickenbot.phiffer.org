@@ -40,4 +40,4 @@ jobs:
                     --exclude 'node_modules/' \
                     --exclude 'config/' \
                     ./ ${{env.dest}}
-                  pm2 restart chickenbot
+                  ssh -i ./deploy_key deploy@pinto.phiffer.org "pm2 restart chickenbot"
