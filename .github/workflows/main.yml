@@ -25,7 +25,7 @@ jobs:
 
             - name: Sync
               env:
-                  dest: 'deploy@pinto.phiffer.org:~/chickenbot/'
+                  dest: 'deploy@pinto.phiffer.org:/var/www/chickenbot/'
               run: |
                   echo "${{secrets.DEPLOY_KEY}}" > deploy_key
                   chmod 600 ./deploy_key
@@ -39,7 +39,5 @@ jobs:
                     --exclude 'deploy_key' \
                     --exclude 'node_modules/' \
                     --exclude 'config/' \
-                    --exclude 'package.json' \
-                    --exclude 'package-lock.json' \
-                    --exclude 'README.md' \
                     ./ ${{env.dest}}
+                  pm2 restart chickenbot
