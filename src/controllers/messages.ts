@@ -129,6 +129,8 @@ export default class Messages {
 			rsp = await this.handleScheduleAwayTimeReply(msg, person);
 		} else if (person.context == PersonContext.SCHEDULE_AWAY_CONFIRM) {
 			rsp = await this.handleScheduleAwayConfirmReply(msg, person);
+		} else if (this.normalizeBody(msg) == 'login') {
+			rsp = await this.handleLoginMessage(msg, person);
 		} else if (person.status == PersonStatus.BACKUP) {
 			rsp = await this.handleBackupMessage(msg, person);
 		} else {
@@ -391,6 +393,12 @@ export default class Messages {
 				await this.sendMessage(person, person.schedule);
 			}
 		}
+	}
+
+	async handleLoginMessage(msg: IncomingMessage, person: Person) {
+		let code = person.getLoginCode();
+		let loginURL = `${Messages.config.serverUrl}/login/${code}`;
+		return `Please follow this link within 15 minutes to complete your login: ${loginURL}`;
 	}
 
 	async setAnnounceContext(backup: Person) {

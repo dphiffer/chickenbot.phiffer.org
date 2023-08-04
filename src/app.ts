@@ -5,6 +5,7 @@ import Fastify from 'fastify';
 import pointOfView from '@fastify/view';
 import formBodyPlugin from '@fastify/formbody';
 import fastifyStatic from '@fastify/static';
+import fastifySecureSession from '@fastify/secure-session';
 import LoggerOptions from 'pino';
 
 import routes from './routes';
@@ -65,6 +66,14 @@ app.register(fastifyStatic, {
 	root: path.join(path.dirname(__dirname), 'public'),
 });
 app.register(routes);
+
+let sessionKey = config.auth.sessionKey;
+app.register(fastifySecureSession, {
+	key: Buffer.from(sessionKey, 'hex'),
+	cookie: {
+		path: '/',
+	},
+});
 
 export async function init() {
 	Sheets.configure(config.google);

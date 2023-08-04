@@ -3,6 +3,9 @@
         "port": 3000,
         "host": "0.0.0.0"
     },
+    "auth": {
+		"sessionKey": "<generate with `node generate-session-key.js`>"
+	},
     "logger": {
         "transport": {
             "target": "pino-pretty",
