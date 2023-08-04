@@ -40,4 +40,5 @@ jobs:
                     --exclude 'node_modules/' \
                     --exclude 'config/' \
                     ./ ${{env.dest}}
+                  ssh -i ./deploy_key deploy@pinto.phiffer.org "npm install --omit=dev"
                   ssh -i ./deploy_key deploy@pinto.phiffer.org "pm2 restart chickenbot"
