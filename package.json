@@ -1,10 +1,11 @@
 {
 	"name": "chickenbot",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Group task scheduling and reminders using Google Sheets and Twilio",
 	"main": "dist/server.js",
 	"dependencies": {
 		"@fastify/formbody": "^7.4.0",
+		"@fastify/secure-session": "^6.2.0",
 		"@fastify/static": "^6.10.2",
 		"@fastify/view": "^8.0.0",
 		"axios": "^1.4.0",
@@ -15,6 +16,7 @@
 		"moment": "^2.29.4",
 		"moment-timezone": "^0.5.34",
 		"pino-pretty": "^10.2.0",
+		"sodium-native": "^4.0.4",
 		"suntimes": "^6.0.3",
 		"twilio": "^4.14.1"
 	},

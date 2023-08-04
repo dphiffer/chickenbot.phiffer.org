@@ -5,6 +5,7 @@ import Assignment from './assignment';
 import { clearTimeout } from 'timers';
 import app from '../app';
 import { callbackify } from 'util';
+import { FastifyRequest } from 'fastify';
 
 export interface PersonUpdate {
 	name: string;
@@ -48,12 +49,30 @@ export default class Person {
 	contextTimeout: null | NodeJS.Timeout = null;
 	scheduleDayIndex: number = 0;
 
+	protected static loginCodes: {
+		name: string;
+		code: number;
+		timeout: NodeJS.Timeout;
+	}[] = [];
+
 	constructor(sheets: Sheets, row: GoogleSpreadsheetRow) {
 		this.name = row.name;
 		this.phone = this.normalizePhone(row.phone);
 		this.call = row.call == 'yes';
 		this.status = row.status;
 		this.away = row.away || '';
+	}
+
+	static async current(request: FastifyRequest) {
+		let name = request.session.get('person');
+		let sheets = await Sheets.getInstance();
+		if (name) {
+			let [person] = sheets.people.filter(p => p.name == name);
+			if (person) {
+				return person;
+			}
+		}
+		return null;
 	}
 
 	normalizePhone(phone: string) {
@@ -202,5 +221,39 @@ export default class Person {
 			this.chatContext = null;
 			this.contextTimeout = null;
 		}, 60 * 60 * 1000);
+	}
+
+	getLoginCode() {
+		let code: number;
+		let existing = Person.loginCodes.find(c => c.name == this.name);
+		if (existing) {
+			// Delete any existing login codes for this person
+			clearTimeout(existing.timeout);
+			Person.loginCodes = Person.loginCodes.filter(
+				c => c.name != this.name
+			);
+		}
+		do {
+			// Ensure the login code is unique
+			code = 10000 + Math.floor(Math.random() * 100000);
+		} while (Person.loginCodes.filter(c => c.code == code).length > 0);
+		Person.loginCodes.push({
+			name: this.name,
+			code: code,
+			timeout: setTimeout(() => {
+				Person.loginCodes = Person.loginCodes.filter(
+					c => c.name != this.name
+				);
+			}, 15 * 60 * 1000),
+		});
+		return code;
+	}
+
+	static checkLoginCode(code: number) {
+		let login = Person.loginCodes.find(c => c.code == code);
+		if (login) {
+			return login.name;
+		}
+		return '';
 	}
 }

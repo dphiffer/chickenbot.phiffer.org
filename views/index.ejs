@@ -1,3 +1,8 @@
+<% if (loginBanner && loginBanner != '') { %>
+	<header class="login-banner">
+		<div class="login-container"><p><%= loginBanner %></p></div>
+	</header>
+<% } %>
 <main>
 	<h1>🐔 chickenbot</h1>
 	<p>Managed by <a href="<%= spreadsheet_url %>">this spreadsheet</a>. You can adjust the assigned person, scheduled time, or the status of any upcoming event.</p>

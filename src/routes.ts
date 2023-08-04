@@ -2,6 +2,7 @@ import moment from 'moment';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { AssignmentUpdate } from './models/assignment';
 import { PersonUpdate } from './models/person';
+import Person from './models/person';
 import Messages from './controllers/messages';
 import Voice from './controllers/voice';
 import Sheets from './controllers/sheets';
@@ -23,20 +24,39 @@ export interface IncomingMessage {
 }
 
 async function routes(app: FastifyInstance) {
-	app.all('/', async (_, reply: FastifyReply) => {
-		let calendar = await Calendar.getInstance();
-		let sheets = await Sheets.getInstance();
-		let messages = Messages.getInstance();
-		let backup = await sheets.currentBackup();
-		let backupName = backup ? backup.name : 'Unknown';
-		return reply.view('index.ejs', {
-			phone: messages.displayPhone(messages.phone),
-			spreadsheet_url: `https://docs.google.com/spreadsheets/d/${sheets.id}/edit`,
-			assignments: calendar.assignments,
-			backup: backupName,
-			today: moment().format('YYYY-MM-DD'),
-		});
-	});
+	app.all(
+		'/',
+		async (
+			request: FastifyRequest<{
+				Querystring: {
+					login?: string;
+				};
+			}>,
+			reply: FastifyReply
+		) => {
+			let calendar = await Calendar.getInstance();
+			let sheets = await Sheets.getInstance();
+			let messages = Messages.getInstance();
+			let backup = await sheets.currentBackup();
+			let backupName = backup ? backup.name : 'Unknown';
+			let loginBanner = '';
+			let person = await Person.current(request);
+			if (request.query.login && request.query.login == 'no') {
+				loginBanner =
+					"Sorry, your login failed. Please text 'login' to Chickenbot.";
+			} else if (person) {
+				loginBanner = `You are logged in. Hello, ${person.name}!`;
+			}
+			return reply.view('index.ejs', {
+				phone: messages.displayPhone(messages.phone),
+				spreadsheet_url: `https://docs.google.com/spreadsheets/d/${sheets.id}/edit`,
+				assignments: calendar.assignments,
+				backup: backupName,
+				today: moment().format('YYYY-MM-DD'),
+				loginBanner: loginBanner,
+			});
+		}
+	);
 
 	app.post(
 		'/message',
@@ -185,6 +205,29 @@ async function routes(app: FastifyInstance) {
 				return {
 					error: (err as Error).message,
 				};
+			}
+		}
+	);
+
+	app.get(
+		'/login/:code',
+		(
+			request: FastifyRequest<{
+				Params: {
+					code: string;
+				};
+			}>,
+			reply: FastifyReply
+		) => {
+			let code = parseInt(request.params.code);
+			let name = Person.checkLoginCode(code);
+			if (name) {
+				app.log.warn(`Successful login by ${name} from ${request.ip}`);
+				request.session.set('person', name);
+				reply.redirect('/?login=yes');
+			} else {
+				app.log.warn(`Unsuccessful login from ${request.ip}`);
+				reply.redirect('/?login=no');
 			}
 		}
 	);
