@@ -259,12 +259,14 @@ class Calendar {
 		let startDate = moment.default();
 		let assignmentDate: moment.Moment;
 		for (let assignment of this.assignments) {
-			assignmentDate = moment.default(assignment.date, 'M/D');
-			if (
-				assignmentDate.format('YYYY-MM-DD') >
-				startDate.format('YYYY-MM-DD')
-			) {
-				startDate = assignmentDate;
+			if (assignment.sheet == 'Upcoming') {
+				assignmentDate = moment.default(assignment.date, 'M/D');
+				if (
+					assignmentDate.format('YYYY-MM-DD') >
+					startDate.format('YYYY-MM-DD')
+				) {
+					startDate = assignmentDate;
+				}
 			}
 		}
 		console.log(startDate.format('YYYY-MM-DD'));
