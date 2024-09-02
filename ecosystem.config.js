@@ -1,6 +1,6 @@
 module.exports = {
     apps: [{
-        script: 'dist/app.js',
+        script: 'dist/server.js',
         name: 'chickenbot.phiffer.org'
     }],
 };
